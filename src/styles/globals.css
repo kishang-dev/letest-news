@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+.prose * {
+  background-color: transparent !important;
+  color: inherit !important;
+}
+
+
+/* globals.css */
+.ck-content {
+  width: 100%;
+  max-width: 100%;
+  background: transparent !important;
+  color: inherit !important;
+}
+
+.ck-content p {
+  text-align: justify;     /* justify text */
+  line-height: 1.75;       /* more readable line spacing */
+  margin-bottom: 1rem;     /* space between paragraphs */
+  white-space: normal;     /* prevent breaking into weird lines */
+  word-break: break-word;  /* avoid overflow issues */
+}
