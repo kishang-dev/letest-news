@@ -162,6 +162,17 @@ const ManageNewsPage = () => {
     [storage]
   );
 
+  // Clear all form state
+  const clearFormState = () => {
+    setContent("");
+    setTitle("");
+    setCategories([]);
+    setIsFeatured(false);
+    setError(null);
+    setSuccess(null);
+    setEditingId(null);
+  };
+
   // Handle submit
   const handleSubmit = async () => {
     if (!content.trim()) return setError("Content cannot be empty");
@@ -186,9 +197,15 @@ const ManageNewsPage = () => {
           updatedAt: serverTimestamp(),
         });
         setSuccess("Article updated successfully!");
+        
+        // Clear state and redirect after update
+        setTimeout(() => {
+          clearFormState();
+          router.push("/admin/news");
+        }, 1500);
       } else {
         // Create
-        const docRef = await addDoc(collection(db, "news"), {
+        await addDoc(collection(db, "news"), {
           title,
           content,
           categories: categoryValues,
@@ -197,16 +214,12 @@ const ManageNewsPage = () => {
           updatedAt: serverTimestamp(),
         });
         setSuccess("Article created successfully!");
-        router.replace(`/admin/news/manage/?id=${docRef.id}`, undefined, { shallow: true });
-        setEditingId(docRef.id);
-      }
-
-      // Only clear form on create
-      if (!editingId) {
-        setContent("");
-        setTitle("");
-        setCategories([]);
-        setIsFeatured(false);
+        
+        // Clear state and redirect after create
+        setTimeout(() => {
+          clearFormState();
+          router.push("/admin/news");
+        }, 1500);
       }
     } catch (err) {
       console.error("Save failed:", err);
@@ -384,19 +397,17 @@ const ManageNewsPage = () => {
                     className="sr-only"
                   />
                   <div
-                    className={`w-6 h-6 rounded-lg border-2 transition-all flex items-center justify-center ${
-                      isFeatured
+                    className={`w-6 h-6 rounded-lg border-2 transition-all flex items-center justify-center ${isFeatured
                         ? "bg-gradient-to-r from-yellow-400 to-orange-400 border-yellow-400"
                         : "bg-white border-gray-300 group-hover:border-yellow-400"
-                    }`}
+                      }`}
                   >
                     {isFeatured && <Star className="w-4 h-4 text-white fill-current" />}
                   </div>
                   <div className="flex-1">
                     <span
-                      className={`font-semibold ${
-                        isFeatured ? "text-yellow-800" : "text-gray-700 group-hover:text-yellow-700"
-                      }`}
+                      className={`font-semibold ${isFeatured ? "text-yellow-800" : "text-gray-700 group-hover:text-yellow-700"
+                        }`}
                     >
                       Mark as Featured Article
                     </span>
@@ -405,15 +416,16 @@ const ManageNewsPage = () => {
                     </p>
                   </div>
                   <Star
-                    className={`w-5 h-5 ${
-                      isFeatured
+                    className={`w-5 h-5 ${isFeatured
                         ? "text-yellow-500 fill-current animate-pulse"
                         : "text-gray-400 group-hover:text-yellow-400"
-                    }`}
+                      }`}
                   />
                 </label>
               </div>
             </div>
+
+          
 
             {/* Editor */}
             <div className="space-y-3">

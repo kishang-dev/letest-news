@@ -11,6 +11,7 @@ import {
   startAfter,
   onSnapshot,
   DocumentSnapshot,
+  where,
 } from "firebase/firestore";
 import { app } from "@/lib/firebase";
 
@@ -95,11 +96,26 @@ const Home = () => {
 
     if (unsubscribeRef.current) unsubscribeRef.current();
 
-    const q = query(
-      collection(db, "news"),
-      orderBy("createdAt", "desc"),
-      limit(INITIAL_PAGE_SIZE)
-    );
+    // Build query based on category
+    let q;
+    const activeCategory = category && category !== "Home" ? category as string : null;
+
+    if (activeCategory) {
+      // Query with category filter using array-contains
+      q = query(
+        collection(db, "news"),
+        where("categories", "array-contains", activeCategory),
+        orderBy("createdAt", "desc"),
+        limit(INITIAL_PAGE_SIZE)
+      );
+    } else {
+      // Query without category filter
+      q = query(
+        collection(db, "news"),
+        orderBy("createdAt", "desc"),
+        limit(INITIAL_PAGE_SIZE)
+      );
+    }
 
     const unsubscribe = onSnapshot(
       q,
@@ -118,7 +134,7 @@ const Home = () => {
             } as News;
 
             // Update last doc for pagination
-            if (doc.id === snapshot.docs[snapshot.docs.length - 1].id) {
+            if (doc.id === snapshot.docs[snapshot.docs.length - 1]?.id) {
               lastDocRef.current = doc;
             }
             return item;
@@ -137,7 +153,7 @@ const Home = () => {
     );
 
     unsubscribeRef.current = unsubscribe;
-  }, [db, setNewsList]);
+  }, [db, setNewsList, category]);
 
   // Load more items (10 items per load)
   const loadMore = useCallback(() => {
@@ -145,12 +161,25 @@ const Home = () => {
 
     setLoadingMore(true);
 
-    const nextQuery = query(
-      collection(db, "news"),
-      orderBy("createdAt", "desc"),
-      startAfter(lastDocRef.current),
-      limit(LOAD_MORE_SIZE)
-    );
+    const activeCategory = category && category !== "Home" ? category as string : null;
+    let nextQuery;
+
+    if (activeCategory) {
+      nextQuery = query(
+        collection(db, "news"),
+        where("categories", "array-contains", activeCategory),
+        orderBy("createdAt", "desc"),
+        startAfter(lastDocRef.current),
+        limit(LOAD_MORE_SIZE)
+      );
+    } else {
+      nextQuery = query(
+        collection(db, "news"),
+        orderBy("createdAt", "desc"),
+        startAfter(lastDocRef.current),
+        limit(LOAD_MORE_SIZE)
+      );
+    }
 
     const unsubscribe = onSnapshot(
       nextQuery,
@@ -168,7 +197,7 @@ const Home = () => {
               isFeatured: data.isFeatured || false,
             } as News;
 
-            if (doc.id === snapshot.docs[snapshot.docs.length - 1].id) {
+            if (doc.id === snapshot.docs[snapshot.docs.length - 1]?.id) {
               lastDocRef.current = doc;
             }
             return item;
@@ -187,24 +216,16 @@ const Home = () => {
 
     // Auto-unsubscribe after fetch
     setTimeout(unsubscribe, 1000);
-  }, [hasMore, loadingMore, db]);
+  }, [hasMore, loadingMore, db, category]);
 
   // Re-fetch on category change
   useEffect(() => {
     fetchInitialPage();
   }, [category, fetchInitialPage]);
 
-  // Filter news (after pagination)
+  // Filter news by search query only (category filtering is done in Firebase query)
   useEffect(() => {
     let filtered = [...paginatedNews];
-
-    if (category && category !== "Home") {
-      filtered = filtered.filter((news) =>
-        news.categories?.some(
-          (cat) => cat.toLowerCase() === (category as string).toLowerCase()
-        )
-      );
-    }
 
     if (searchQuery) {
       filtered = filtered.filter(
@@ -215,7 +236,7 @@ const Home = () => {
     }
 
     setFilteredNewsList(filtered);
-  }, [paginatedNews, category, searchQuery]);
+  }, [paginatedNews, searchQuery]);
 
   // Embla Carousel
   const [emblaRef] = useEmblaCarousel(
@@ -230,6 +251,7 @@ const Home = () => {
 
   return (
     <div>
+
       {/* Featured News Carousel - Only on Home */}
       {(!category || category === "Home") && featuredNews.length > 0 && (
         <div className="overflow-hidden mb-8" ref={emblaRef}>
@@ -323,11 +345,11 @@ const Home = () => {
                   <button
                     onClick={loadMore}
                     disabled={loadingMore}
-                    className="px-12 py-2 bg-transparent border border-gray-900 text-gray-800 hover:bg-gray-100 disabled:bg-transparent disabled:border-gray-300 disabled:text-gray-400 font-semibold   hover:shadow-lg transition-all duration-200 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="px-12 py-2 bg-transparent border border-gray-900 text-gray-800 hover:bg-gray-100 disabled:bg-transparent disabled:border-gray-300 disabled:text-gray-400 font-semibold hover:shadow-lg transition-all duration-200 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     {loadingMore ? (
                       <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-r-transparent"></div>
+                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-800 border-r-transparent"></div>
                         <span>Loading...</span>
                       </>
                     ) : (
@@ -385,9 +407,7 @@ const Home = () => {
             <div className="bg-gray-100 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-4 text-center">
               <p className="text-gray-500 dark:text-gray-400 text-sm mb-2">Advertisement</p>
               <div className="bg-gray-200 dark:bg-gray-700 h-64 rounded flex items-center justify-center">
-
                 <div className="w-full h-[250px] overflow-hidden">
-
                   <ResponsiveAd dataAdSlot="2285841467" />
                 </div>
               </div>

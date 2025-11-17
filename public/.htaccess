@@ -1,0 +1,5 @@
+RewriteEngine On
+RewriteBase /
+
+# Always route requests to Next.js
+RewriteRule ^.*$ /index.html [L]
