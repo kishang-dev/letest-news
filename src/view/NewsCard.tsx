@@ -1,8 +1,8 @@
 'use client'
 
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import TimeAgo from '@/components/common/TimeAgo';
+import { useRouter } from 'next/router';
 
 type News = {
   id: string;
@@ -57,7 +57,15 @@ export default function NewsCard({ news }: { news: News }) {
       key={news?.id}
       className="h-full group cursor-pointer rounded-lg overflow-hidden transition-colors duration-300 
              bg-white hover:bg-gray-100 dark:bg-gray-900 dark:hover:bg-gray-800"
-      onClick={() => router.push(`/${news?.id}`)}
+     onClick={() =>{
+
+       router.push({
+    pathname: "/news",
+    query: { id: news.id },
+  })
+     }
+ 
+}
     >
       {/* Image Section with Lazy Loading */}
       <div className="relative overflow-hidden h-48">

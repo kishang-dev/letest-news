@@ -42,11 +42,11 @@ useEffect(() => {
     if (value === "Home") {
       delete newQuery.category; // remove the param for Home
     } else {
-      newQuery.category = encodeURIComponent(value);
+      newQuery.category = value;
     }
 
     router.push(
-      { pathname: router.pathname, query: newQuery },
+      { pathname: "/", query: newQuery },
       undefined,
       { shallow: true }
     );
@@ -66,14 +66,14 @@ useEffect(() => {
       <div className="container mx-auto px-4 py-12">
 
         {/* Main Footer Content */}
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
           {/* About Section */}
           <div>
             <h3 className="text-lg font-semibold mb-4 text-foreground">About WORLD NEWS</h3>
             <p className="text-sm mb-4 text-muted-foreground">
               Your trusted source for AI-powered news and insights from around the world.
             </p>
-            <div className="flex space-x-3">
+            {/* <div className="flex space-x-3">
               <a
                 href="#"
                 className="inline-flex items-center justify-center h-10 w-10 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-accent"
@@ -106,7 +106,7 @@ useEffect(() => {
                   <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
                 </svg>
               </a>
-            </div>
+            </div> */}
           </div>
 
           {/* Navigation Section 1 */}
@@ -144,7 +144,7 @@ useEffect(() => {
           </div>
 
           {/* YouTube Section */}
-          <div>
+          {/* <div>
             <div className="bg-card p-4 rounded-lg border">
               <div className="flex items-center gap-3 mb-3">
                 <div className="bg-primary p-2 rounded">
@@ -161,11 +161,11 @@ useEffect(() => {
                   <p className="text-muted-foreground text-sm">is on Youtube</p>
                 </div>
               </div>
-              {/* <button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-md transition-colors">
+              <button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-md transition-colors">
                 Subscribe Now
-              </button> */}
+              </button>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Bottom Section */}

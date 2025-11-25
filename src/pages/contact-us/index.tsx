@@ -1,27 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { app } from '@/lib/firebase';
-import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, getFirestore } from 'firebase/firestore';
 import {
-  Sun,
-  Moon,
-  MapPin,
-  Phone,
-  Mail,
-  Clock,
-  Facebook,
-  Twitter,
-  Linkedin,
-  Instagram,
+
   Loader2,
   Send,
   CheckCircle,
   AlertCircle
 } from 'lucide-react';
 import LandingLayout from '@/layouts/LandingLayout';
+import { app } from '@/lib/firebase';
 
-const db = getFirestore(app);
 
 interface FormData {
   name: string;
@@ -40,14 +30,11 @@ interface ContactItem {
   iconColor: string;
 }
 
-interface SocialPlatform {
-  name: string;
-  icon: React.ComponentType<{ className?: string }>;
-  href: string;
-  ariaLabel: string;
-}
+
 
 const ContactUs = () => {
+  const db = getFirestore(app);
+
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
@@ -57,63 +44,9 @@ const ContactUs = () => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>(null);
 
-  const contactItems: ContactItem[] = [
-    {
-      icon: MapPin,
-      title: "Address",
-      content: "123 Business Street, City, State 12345",
-      bgColor: "bg-blue-100 dark:bg-blue-900/30",
-      iconColor: "text-blue-600 dark:text-blue-400"
-    },
-    {
-      icon: Phone,
-      title: "Phone",
-      content: "+1 (555) 123-4567",
-      bgColor: "bg-green-100 dark:bg-green-900/30",
-      iconColor: "text-green-600 dark:text-green-400"
-    },
-    {
-      icon: Mail,
-      title: "Email",
-      content: "contact@company.com",
-      bgColor: "bg-purple-100 dark:bg-purple-900/30",
-      iconColor: "text-purple-600 dark:text-purple-400"
-    },
-    {
-      icon: Clock,
-      title: "Business Hours",
-      content: "Mon - Fri: 9AM - 6PM",
-      bgColor: "bg-orange-100 dark:bg-orange-900/30",
-      iconColor: "text-orange-600 dark:text-orange-400"
-    }
-  ];
 
-  const socialPlatforms: SocialPlatform[] = [
-    {
-      name: 'facebook',
-      icon: Facebook,
-      href: '#',
-      ariaLabel: 'Visit our Facebook page'
-    },
-    {
-      name: 'twitter',
-      icon: Twitter,
-      href: '#',
-      ariaLabel: 'Visit our Twitter page'
-    },
-    {
-      name: 'linkedin',
-      icon: Linkedin,
-      href: '#',
-      ariaLabel: 'Visit our LinkedIn page'
-    },
-    {
-      name: 'instagram',
-      icon: Instagram,
-      href: '#',
-      ariaLabel: 'Visit our Instagram page'
-    }
-  ];
+
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void => {
     const { name, value } = e.target;
