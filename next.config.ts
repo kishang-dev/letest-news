@@ -27,6 +27,33 @@ const nextConfig = {
   },
 
   distDir: ".next",
+
+
+   async rewrites() {
+    return [
+      {
+        source: "/ads.txt",
+        destination: "/ads.txt",
+      },
+      {
+        source: "/ads.txt/",
+        destination: "/ads.txt",
+      },
+    ];
+  },
+
+  // ✅ ALSO MAKE SURE THE FILE IS COPIED IN EXPORT OUTPUT
+  async headers() {
+    return [
+      {
+        source: "/ads.txt",
+        headers: [
+          { key: "Content-Type", value: "text/plain" },
+          { key: "Cache-Control", value: "no-store, must-revalidate" },
+        ],
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;
