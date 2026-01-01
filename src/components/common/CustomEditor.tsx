@@ -4,6 +4,7 @@
 import React, { useMemo, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
 import "quill/dist/quill.snow.css";
+import { processEditorImage } from "@/utils/imageProcessor";
 
 const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false }) as any;
 
@@ -35,8 +36,18 @@ export default function CustomEditor({
   const handleFileUpload = async (file: File, type: "image" | "video") => {
     try {
       console.log(`Starting ${type} upload for file:`, file.name);
+
+      let fileToUpload = file;
+
+      // Process images: convert to WebP and compress
+      if (type === "image") {
+        console.log('Processing image:', file.name, `(${(file.size / 1024).toFixed(2)} KB)`);
+        fileToUpload = await processEditorImage(file);
+        console.log('Processed image:', fileToUpload.name, `(${(fileToUpload.size / 1024).toFixed(2)} KB)`);
+      }
+
       const uploadFunc = type === "image" ? onImageUpload : onVideoUpload;
-      const downloadURL = await uploadFunc(file);
+      const downloadURL = await uploadFunc(fileToUpload);
       console.log(`${type} uploaded successfully. URL:`, downloadURL);
 
       if (!downloadURL) {
@@ -184,8 +195,13 @@ export default function CustomEditor({
       if (input.files && input.files.length > 0) {
         const file = input.files[0];
         try {
+          // Process image: convert to WebP and compress
+          console.log('Processing toolbar image:', file.name, `(${(file.size / 1024).toFixed(2)} KB)`);
+          const processedFile = await processEditorImage(file);
+          console.log('Processed toolbar image:', processedFile.name, `(${(processedFile.size / 1024).toFixed(2)} KB)`);
+
           // Call the passed-in prop function to handle the upload
-          const downloadURL = await onImageUpload(file);
+          const downloadURL = await onImageUpload(processedFile);
           const quill = (ReactQuill as any).editor;
           if (quill) {
             const range = quill.getSelection();

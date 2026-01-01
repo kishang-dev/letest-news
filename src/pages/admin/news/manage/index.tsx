@@ -33,6 +33,7 @@ import {
   Star,
 } from "lucide-react";
 import withAdminAuth from "@/hoc/withAdminAuth";
+import { processCoverImage, processEditorImage } from "@/utils/imageProcessor";
 
 // Predefined categories
 const categoryOptions = [
@@ -105,30 +106,43 @@ const ManageNewsPage = () => {
   // Image upload handler (for Editor)
   const handleImageUpload = useCallback(
     async (file: File): Promise<string> => {
-      const fileName = `${Date.now()}-${file.name}`;
-      const storageRef = ref(storage, `images/${fileName}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
+      try {
+        // Process image: convert to WebP and compress
+        console.log('Processing editor image:', file.name, `(${(file.size / 1024).toFixed(2)} KB)`);
+        const processedFile = await processEditorImage(file);
+        console.log('Processed editor image:', processedFile.name, `(${(processedFile.size / 1024).toFixed(2)} KB)`);
 
-      return new Promise((resolve, reject) => {
-        uploadTask.on(
-          "state_changed",
-          (snapshot) => {
-            // Progress monitoring if needed
-          },
-          (error) => {
-            console.error("Image upload failed:", error);
-            reject(error);
-          },
-          async () => {
-            try {
-              const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-              resolve(downloadURL);
-            } catch (err) {
-              reject(err);
+        const fileName = `${Date.now()}-${processedFile.name}`;
+        const storageRef = ref(storage, `images/${fileName}`);
+        const uploadTask = uploadBytesResumable(storageRef, processedFile);
+
+        return new Promise((resolve, reject) => {
+          uploadTask.on(
+            "state_changed",
+            (snapshot) => {
+              // Progress monitoring if needed
+              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              console.log(`Upload progress: ${progress.toFixed(0)}%`);
+            },
+            (error) => {
+              console.error("Image upload failed:", error);
+              reject(error);
+            },
+            async () => {
+              try {
+                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                console.log('Image uploaded successfully:', downloadURL);
+                resolve(downloadURL);
+              } catch (err) {
+                reject(err);
+              }
             }
-          }
-        );
-      });
+          );
+        });
+      } catch (error) {
+        console.error('Image processing failed:', error);
+        throw error;
+      }
     },
     [storage]
   );
@@ -138,12 +152,48 @@ const ManageNewsPage = () => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setUploadingCover(true);
+      setError(null);
+
       try {
-        const url = await handleImageUpload(file);
+        // Process cover image: convert to WebP and compress
+        console.log('Processing cover image:', file.name, `(${(file.size / 1024).toFixed(2)} KB)`);
+        const processedFile = await processCoverImage(file);
+        console.log('Processed cover image:', processedFile.name, `(${(processedFile.size / 1024).toFixed(2)} KB)`);
+
+        // Upload the processed image
+        const fileName = `${Date.now()}-${processedFile.name}`;
+        const storageRef = ref(storage, `covers/${fileName}`);
+        const uploadTask = uploadBytesResumable(storageRef, processedFile);
+
+        const url = await new Promise<string>((resolve, reject) => {
+          uploadTask.on(
+            "state_changed",
+            (snapshot) => {
+              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              console.log(`Cover upload progress: ${progress.toFixed(0)}%`);
+            },
+            (error) => {
+              console.error("Cover image upload failed:", error);
+              reject(error);
+            },
+            async () => {
+              try {
+                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                console.log('Cover image uploaded successfully:', downloadURL);
+                resolve(downloadURL);
+              } catch (err) {
+                reject(err);
+              }
+            }
+          );
+        });
+
         setCoverImage(url);
+        setSuccess('Cover image uploaded and optimized successfully!');
+        setTimeout(() => setSuccess(null), 3000);
       } catch (err) {
-        console.error("Cover image upload failed", err);
-        setError("Failed to upload cover image");
+        console.error("Cover image processing/upload failed", err);
+        setError("Failed to upload cover image. Please try again.");
       } finally {
         setUploadingCover(false);
       }
@@ -430,7 +480,8 @@ const ManageNewsPage = () => {
                     {uploadingCover ? (
                       <div className="flex flex-col items-center">
                         <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mb-2" />
-                        <p className="text-sm text-gray-500">Uploading...</p>
+                        <p className="text-sm text-gray-500">Optimizing and uploading...</p>
+                        <p className="text-xs text-gray-400 mt-1">Converting to WebP format</p>
                       </div>
                     ) : (
                       <label className="cursor-pointer flex flex-col items-center w-full">
@@ -439,6 +490,7 @@ const ManageNewsPage = () => {
                         </div>
                         <span className="text-indigo-600 font-medium hover:text-indigo-700">Click to upload cover image</span>
                         <span className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 5MB</span>
+                        <span className="text-xs text-green-600 mt-2 font-medium">✨ Auto-optimized to WebP format</span>
                         <input
                           type="file"
                           accept="image/*"
@@ -512,7 +564,7 @@ const ManageNewsPage = () => {
               </div>
               <p className="text-xs text-gray-500 flex items-center space-x-1">
                 <span>Sparkles:</span>
-                <span>Use toolbar to format, add media</span>
+                <span>Use toolbar to format, add media • Images auto-optimized to WebP ✨</span>
               </p>
             </div>
 

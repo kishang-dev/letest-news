@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { app } from "@/lib/firebase";
-import { getFirestore, collection, getDocs, query, orderBy, deleteDoc, doc, limit, startAfter, DocumentSnapshot } from "firebase/firestore";
+import { getFirestore, collection, getDocs, query, orderBy, deleteDoc, doc, limit, startAfter, DocumentSnapshot, getCountFromServer } from "firebase/firestore";
 import Link from "next/link";
+import Pagination from "@/components/common/Pagination";
 import {
   Plus,
   Edit3,
@@ -38,74 +39,79 @@ const NEWS_PER_PAGE = 10;
 const NewsList = () => {
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchTerm, setSearchTerm] = useState('');
-  const [lastDoc, setLastDoc] = useState<DocumentSnapshot | null>(null);
-  const [hasMore, setHasMore] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalItems, setTotalItems] = useState(0);
 
   const db = getFirestore(app);
 
-  const fetchNews = async (isLoadMore = false) => {
-    if (isLoadMore) {
-      setLoadingMore(true);
-    } else {
-      setLoading(true);
+  // Fetch total count for pagination
+  const fetchTotalCount = async () => {
+    try {
+      const newsCollection = collection(db, "news");
+      const snapshot = await getCountFromServer(newsCollection);
+      const total = snapshot.data().count;
+      setTotalItems(total);
+      setTotalPages(Math.ceil(total / NEWS_PER_PAGE));
+    } catch (err) {
+      console.error("Failed to fetch total count:", err);
     }
+  };
+
+  const fetchNews = async (page: number = 1) => {
+    setLoading(true);
     setError(null);
 
     try {
-      let newsQuery;
       const newsCollection = collection(db, "news");
 
-      if (isLoadMore && lastDoc) {
-        newsQuery = query(
-          newsCollection,
-          orderBy("createdAt", "desc"),
-          startAfter(lastDoc),
-          limit(NEWS_PER_PAGE)
-        );
-      } else {
-        newsQuery = query(
-          newsCollection,
-          orderBy("createdAt", "desc"),
-          limit(NEWS_PER_PAGE)
-        );
-      }
+      // Calculate how many documents to skip
+      const skipCount = (page - 1) * NEWS_PER_PAGE;
 
-      const querySnapshot = await getDocs(newsQuery);
-      const newData = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as NewsItem[];
+      // First, get all documents up to the page we want
+      const allDocsQuery = query(
+        newsCollection,
+        orderBy("createdAt", "desc"),
+        limit(skipCount + NEWS_PER_PAGE)
+      );
 
-      // Update Last Doc
-      const lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
-      setLastDoc(lastVisible || null);
+      const allDocsSnapshot = await getDocs(allDocsQuery);
 
-      // Check if we have more
-      setHasMore(querySnapshot.docs.length === NEWS_PER_PAGE);
+      // Get only the documents for the current page
+      const pageData = allDocsSnapshot.docs
+        .slice(skipCount)
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as NewsItem[];
 
-      if (isLoadMore) {
-        setNewsItems(prev => [...prev, ...newData]);
-      } else {
-        setNewsItems(newData);
-      }
+      setNewsItems(pageData);
     } catch (err) {
       console.error("Failed to fetch news:", err);
       setError("Failed to load news. Please try again.");
     } finally {
       setLoading(false);
-      setLoadingMore(false);
     }
   };
 
   // Initial Fetch
   useEffect(() => {
-    fetchNews(false);
+    fetchTotalCount();
+    fetchNews(1);
   }, [db]);
+
+  // Fetch when page changes
+  useEffect(() => {
+    if (totalPages > 0) {
+      fetchNews(currentPage);
+      // Scroll to top when page changes
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [currentPage]);
 
   // Handle delete
   const handleDelete = async (id: string) => {
@@ -394,17 +400,17 @@ const NewsList = () => {
             ))}
           </div>
         )}
-        {/* Load More Button */}
-        {!loading && hasMore && !searchTerm && (
-          <div className="flex justify-center mt-8 pb-8">
-            <button
-              onClick={() => fetchNews(true)}
-              disabled={loadingMore}
-              className="px-6 py-3 bg-white border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-all shadow-sm flex items-center space-x-2"
-            >
-              {loadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
-              <span>{loadingMore ? "Loading more..." : "Load More Articles"}</span>
-            </button>
+        {/* Pagination */}
+        {!loading && filteredNews.length > 0 && !searchTerm && totalPages > 1 && (
+          <div className="mt-8 pb-8">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              onPageChange={(page) => setCurrentPage(page)}
+              showInfo={true}
+              className=""
+            />
           </div>
         )}
       </div>
