@@ -57,6 +57,8 @@ const ManageNewsPage = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isFeatured, setIsFeatured] = useState(false);
+  const [coverImage, setCoverImage] = useState<string>("");
+  const [uploadingCover, setUploadingCover] = useState(false);
 
   const firebaseApp = app;
   const storage = getStorage(firebaseApp);
@@ -80,6 +82,7 @@ const ManageNewsPage = () => {
           setTitle(data.title || "");
           setContent(data.content || "");
           setIsFeatured(data.isFeatured || false);
+          setCoverImage(data.image || ""); // Load existing image
           setCategories(
             (data.categories || []).map((cat: string) => ({
               value: cat,
@@ -99,7 +102,7 @@ const ManageNewsPage = () => {
     fetchArticle();
   }, [id, db]);
 
-  // Image upload handler
+  // Image upload handler (for Editor)
   const handleImageUpload = useCallback(
     async (file: File): Promise<string> => {
       const fileName = `${Date.now()}-${file.name}`;
@@ -110,8 +113,7 @@ const ManageNewsPage = () => {
         uploadTask.on(
           "state_changed",
           (snapshot) => {
-            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            console.log("Image upload is " + progress + "% done");
+            // Progress monitoring if needed
           },
           (error) => {
             console.error("Image upload failed:", error);
@@ -131,6 +133,23 @@ const ManageNewsPage = () => {
     [storage]
   );
 
+  // Handle Cover Image Upload
+  const handleCoverImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setUploadingCover(true);
+      try {
+        const url = await handleImageUpload(file);
+        setCoverImage(url);
+      } catch (err) {
+        console.error("Cover image upload failed", err);
+        setError("Failed to upload cover image");
+      } finally {
+        setUploadingCover(false);
+      }
+    }
+  };
+
   // Video upload handler
   const handleVideoUpload = useCallback(
     async (file: File): Promise<string> => {
@@ -142,8 +161,7 @@ const ManageNewsPage = () => {
         uploadTask.on(
           "state_changed",
           (snapshot) => {
-            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            console.log("Video upload is " + progress + "% done");
+            // Progress
           },
           (error) => {
             reject(error);
@@ -168,6 +186,7 @@ const ManageNewsPage = () => {
     setTitle("");
     setCategories([]);
     setIsFeatured(false);
+    setCoverImage("");
     setError(null);
     setSuccess(null);
     setEditingId(null);
@@ -179,6 +198,9 @@ const ManageNewsPage = () => {
     if (!title.trim()) return setError("Title cannot be empty");
     if (categories.length === 0) return setError("Please select at least one category");
 
+    // We can allow empty cover image, but it's better if they have one. 
+    // We won't block it though.
+
     setIsSubmitting(true);
     setError(null);
     setSuccess(null);
@@ -186,18 +208,21 @@ const ManageNewsPage = () => {
     try {
       const categoryValues = categories.map((cat) => cat.value);
 
+      const articleData = {
+        title,
+        content,
+        categories: categoryValues,
+        isFeatured,
+        image: coverImage, // Save the cover image URL
+        updatedAt: serverTimestamp(),
+      };
+
       if (editingId) {
         // Update
         const docRef = doc(db, "news", editingId);
-        await updateDoc(docRef, {
-          title,
-          content,
-          categories: categoryValues,
-          isFeatured,
-          updatedAt: serverTimestamp(),
-        });
+        await updateDoc(docRef, articleData);
         setSuccess("Article updated successfully!");
-        
+
         // Clear state and redirect after update
         setTimeout(() => {
           clearFormState();
@@ -206,15 +231,11 @@ const ManageNewsPage = () => {
       } else {
         // Create
         await addDoc(collection(db, "news"), {
-          title,
-          content,
-          categories: categoryValues,
-          isFeatured,
+          ...articleData,
           createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
         });
         setSuccess("Article created successfully!");
-        
+
         // Clear state and redirect after create
         setTimeout(() => {
           clearFormState();
@@ -383,6 +404,54 @@ const ManageNewsPage = () => {
               </p>
             </div>
 
+            {/* Cover Image */}
+            <div className="space-y-3">
+              <label className="block text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                Cover Image
+              </label>
+              <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors">
+                {coverImage ? (
+                  <div className="relative w-full max-w-md">
+                    <img
+                      src={coverImage}
+                      alt="Cover Preview"
+                      className="w-full h-64 object-cover rounded-lg shadow-md"
+                    />
+                    <button
+                      onClick={() => setCoverImage("")}
+                      className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                    <p className="text-center text-sm text-green-600 mt-2 font-medium">Image uploaded successfully</p>
+                  </div>
+                ) : (
+                  <div className="text-center w-full">
+                    {uploadingCover ? (
+                      <div className="flex flex-col items-center">
+                        <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mb-2" />
+                        <p className="text-sm text-gray-500">Uploading...</p>
+                      </div>
+                    ) : (
+                      <label className="cursor-pointer flex flex-col items-center w-full">
+                        <div className="p-4 bg-indigo-50 rounded-full mb-3">
+                          <Sparkles className="w-6 h-6 text-indigo-500" />
+                        </div>
+                        <span className="text-indigo-600 font-medium hover:text-indigo-700">Click to upload cover image</span>
+                        <span className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 5MB</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleCoverImageChange}
+                          className="hidden"
+                        />
+                      </label>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Featured */}
             <div className="space-y-3">
               <label className="block text-sm font-semibold text-gray-700 uppercase tracking-wide">
@@ -398,8 +467,8 @@ const ManageNewsPage = () => {
                   />
                   <div
                     className={`w-6 h-6 rounded-lg border-2 transition-all flex items-center justify-center ${isFeatured
-                        ? "bg-gradient-to-r from-yellow-400 to-orange-400 border-yellow-400"
-                        : "bg-white border-gray-300 group-hover:border-yellow-400"
+                      ? "bg-gradient-to-r from-yellow-400 to-orange-400 border-yellow-400"
+                      : "bg-white border-gray-300 group-hover:border-yellow-400"
                       }`}
                   >
                     {isFeatured && <Star className="w-4 h-4 text-white fill-current" />}
@@ -417,15 +486,15 @@ const ManageNewsPage = () => {
                   </div>
                   <Star
                     className={`w-5 h-5 ${isFeatured
-                        ? "text-yellow-500 fill-current animate-pulse"
-                        : "text-gray-400 group-hover:text-yellow-400"
+                      ? "text-yellow-500 fill-current animate-pulse"
+                      : "text-gray-400 group-hover:text-yellow-400"
                       }`}
                   />
                 </label>
               </div>
             </div>
 
-          
+
 
             {/* Editor */}
             <div className="space-y-3">

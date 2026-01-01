@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { getFirestore, doc, onSnapshot, Timestamp } from "firebase/firestore";
+import { getFirestore, doc, onSnapshot, Timestamp, getDoc } from "firebase/firestore";
 import { app } from "@/lib/firebase";
 import LandingLayout from "@/layouts/LandingLayout";
 import Image from "next/image";
@@ -22,7 +22,7 @@ interface NewsData {
   title: string;
   content: string;
   image?: string;
-  createdAt?: Timestamp;
+  createdAt?: any; // Serialized Timestamp (string/number) or Firestore Object
   [key: string]: any;
 }
 
@@ -37,27 +37,33 @@ const DetailPage = () => {
   // Dynamic URL & Site Info
   const pageUrl = typeof window !== "undefined" ? window.location.href : "";
   const siteName = "WORLD NEWS";
-  const defaultOgImage = "https://worldwideshortnews.com/world-news.png"; // CHANGE THIS TO YOUR REAL 1200x630 IMAGE
+  const defaultOgImage = "https://worldwideshortnews.com/world-news.png";
 
   // Extract first image from HTML content
   const extractFirstImageFromContent = (html: string): string | null => {
     if (!html) return null;
-    const div = document.createElement("div");
-    div.innerHTML = html;
-    const img = div.querySelector("img");
-    if (!img) return null;
 
-    let src = img.getAttribute("src") || img.getAttribute("data-src") || "";
-    if (!src) return null;
+    // Regex based extraction to work on SSR
+    const imgRegex = /<img[^>]+src="([^">]+)"/i;
+    const match = html.match(imgRegex);
 
-    // Make absolute URL
-    if (src.startsWith("/")) {
-      src = `${window.location.origin}${src}`;
-    } else if (!src.startsWith("http")) {
-      src = new URL(src, window.location.origin).href;
+    if (match && match[1]) {
+      let src = match[1];
+      if (src.startsWith("/")) {
+        if (typeof window !== "undefined") {
+          return `${window.location.origin}${src}`;
+        }
+        // Fallback for SSR
+        return src;
+      } else if (!src.startsWith("http")) {
+        // Try to handle other relative paths if possible, or just return them
+        if (typeof window !== "undefined") {
+          return new URL(src, window.location.origin).href;
+        }
+      }
+      return src;
     }
-
-    return src;
+    return null;
   };
 
   // Best OG Image Selection
@@ -65,13 +71,16 @@ const DetailPage = () => {
     let imageUrl = defaultOgImage;
 
     if (news?.image) {
-      imageUrl = news.image.startsWith("http") ? news.image : `${window.location.origin}${news.image}`;
-    } else if (news?.content) {
+      if (typeof window !== "undefined") {
+        imageUrl = news.image.startsWith("http") ? news.image : `${window.location.origin}${news.image}`;
+      } else {
+        imageUrl = news.image; // SSR fallback, assume absolute or handle later
+      }
+    } else if (news?.content && typeof window !== "undefined") {
       const contentImage = extractFirstImageFromContent(news.content);
       if (contentImage) imageUrl = contentImage;
     }
 
-    // Final fallback — must be a real 1200x630 public image
     return imageUrl;
   };
 
@@ -82,6 +91,7 @@ const DetailPage = () => {
     return text.length > 200 ? text.slice(0, 197) + "..." : text;
   };
 
+  // Real-time listener to fetch and keep data fresh
   useEffect(() => {
     if (!id) return;
 
@@ -91,16 +101,16 @@ const DetailPage = () => {
     const unsubscribe = onSnapshot(
       newsRef,
       (snapshot) => {
-        setLoading(false);
         if (snapshot.exists()) {
           setNews({
             id: snapshot.id,
             ...snapshot.data(),
           } as NewsData);
-          setError(null);
+          setLoading(false);
         } else {
           setNews(null);
-          setError("News article not found.");
+          setError("Article not found.");
+          setLoading(false);
         }
       },
       (err) => {
@@ -122,7 +132,7 @@ const DetailPage = () => {
     }
   };
 
-  // Share Functions
+  // Share methods...
   const shareToWhatsApp = () => {
     window.open(`https://wa.me/?text=${encodeURIComponent(`${news?.title}\n${pageUrl}`)}`, "_blank");
   };
@@ -135,13 +145,12 @@ const DetailPage = () => {
     window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`, "_blank");
   };
 
-  // Instagram doesn't allow direct sharing via URL anymore (2025)
-  // Best workaround: Copy link + open Instagram app
   const shareToInstagram = () => {
     navigator.clipboard.writeText(pageUrl);
     alert("Link copied! Open Instagram app → Tap + → Story → Paste link");
     setTimeout(() => {
-      window.open("instagram://app", "_blank") || window.open("https://instagram.com", "_blank");
+      const url = "instagram://app";
+      window.open(url, "_blank") || window.open("https://instagram.com", "_blank");
     }, 1000);
   };
 
@@ -172,14 +181,19 @@ const DetailPage = () => {
   const title = `${news.title} | ${siteName}`;
   const description = getDescription();
 
+  // Helper date formatter safe for SSR/Hydration match
+  const publishDate = news.createdAt
+    ? (typeof news.createdAt.toDate === 'function'
+      ? news.createdAt.toDate().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+      : new Date(news.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }))
+    : "Recently";
+
   return (
     <>
-      {/* FIXED & BULLETPROOF Open Graph Tags */}
       <Head>
         <title>{title}</title>
         <meta name="description" content={description} />
         <link rel="canonical" href={pageUrl} />
-
         {/* Open Graph */}
         <meta property="og:title" content={news.title} />
         <meta property="og:description" content={description} />
@@ -192,32 +206,25 @@ const DetailPage = () => {
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:image:alt" content={news.title} />
-
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={news.title} />
         <meta name="twitter:description" content={description} />
         <meta name="twitter:image" content={ogImage} />
         <meta name="twitter:image:alt" content={news.title} />
-
-        {/* Article Info */}
-        {news.createdAt && (
-          <meta property="article:published_time" content={news.createdAt.toDate().toISOString()} />
-        )}
       </Head>
 
-      {/* Main Content */}
       <div className="container mx-auto md:px-4 py-8 min-h-screen flex flex-col lg:flex-row gap-8">
-        {/* Article */}
         <article className="flex-1">
           <h1 className="text-3xl md:text-4xl font-bold mb-6 leading-tight">
             {news.title}
           </h1>
 
-          {news.image && (
+          {/* Display Featured Image or First Content Image */}
+          {(news.image || extractFirstImageFromContent(news.content)) && (
             <div className="relative w-full h-96 mb-8 rounded-xl overflow-hidden shadow-lg">
               <Image
-                src={news.image}
+                src={news.image || extractFirstImageFromContent(news.content) || ""}
                 alt={news.title}
                 fill
                 className="object-cover"
@@ -233,77 +240,25 @@ const DetailPage = () => {
             dangerouslySetInnerHTML={{ __html: news.content }}
           />
 
-          {/* Share Section */}
           <div className="mt-12 pt-8 border-t border-gray-300 dark:border-gray-700">
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 font-medium">
               Share this article:
             </p>
 
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-
-              {/* WhatsApp */}
-              <button
-                onClick={shareToWhatsApp}
-                className="p-2 rounded-full bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 transition-all active:scale-95 tap-highlight-transparent"
-                title="WhatsApp"
-                aria-label="Share on WhatsApp"
-              >
-                <MessageCircle size={15} className="text-green-600" />
-              </button>
-
-              {/* Telegram */}
-              <button
-                onClick={shareToTelegram}
-                className="p-2 rounded-full bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 transition-all active:scale-95"
-                title="Telegram"
-                aria-label="Share on Telegram"
-              >
-                <Send size={15} className="text-blue-500" />
-              </button>
-
-              {/* Facebook */}
-              <button
-                onClick={shareToFacebook}
-                className="p-2 rounded-full bg-blue-700/10 hover:bg-blue-700/20 border border-blue-700/30 transition-all active:scale-95"
-                title="Facebook"
-                aria-label="Share on Facebook"
-              >
-                <Facebook size={15} className="text-blue-700" />
-              </button>
-
-              {/* Instagram */}
-              <button
-                onClick={shareToInstagram}
-                className="p-2 rounded-full bg-gradient-to-tr from-purple-600 to-pink-600 text-white shadow-sm transition-all active:scale-95"
-                title="Instagram Stories"
-                aria-label="Share on Instagram"
-              >
-                <Instagram size={15} />
-              </button>
-
-              {/* Copy Link */}
-              <button
-                onClick={handleCopyLink}
-                className="p-2 rounded-full bg-gray-500/10 hover:bg-gray-500/20 border border-gray-500/30 transition-all active:scale-95"
-                title="Copy Link"
-                aria-label="Copy link"
-              >
-                <Copy size={15} className="text-gray-700 dark:text-gray-300" />
-              </button>
+              <button onClick={shareToWhatsApp} className="p-2 rounded-full bg-green-500/10 hover:bg-green-500/20 text-green-600 border border-green-500/30 transition-all"><MessageCircle size={15} /></button>
+              <button onClick={shareToTelegram} className="p-2 rounded-full bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 border border-blue-500/30 transition-all"><Send size={15} /></button>
+              <button onClick={shareToFacebook} className="p-2 rounded-full bg-blue-700/10 hover:bg-blue-700/20 text-blue-700 border border-blue-700/30 transition-all"><Facebook size={15} /></button>
+              <button onClick={shareToInstagram} className="p-2 rounded-full bg-gradient-to-tr from-purple-600 to-pink-600 text-white shadow-sm transition-all"><Instagram size={15} /></button>
+              <button onClick={handleCopyLink} className="p-2 rounded-full bg-gray-500/10 hover:bg-gray-500/20 text-gray-700 border border-gray-500/30 transition-all"><Copy size={15} /></button>
             </div>
           </div>
 
           <p className="text-sm text-gray-500 mt-8">
-            Published on{" "}
-            {news.createdAt?.toDate?.()?.toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            }) || "Recently"}
+            Published on {publishDate}
           </p>
         </article>
 
-        {/* Ads Sidebar */}
         <aside className="w-full lg:w-80 xl:w-96">
           <div className="sticky top-6 space-y-6">
             <div className="bg-gray-100 border-2 border-dashed rounded-xl p-6 text-center">
@@ -318,6 +273,8 @@ const DetailPage = () => {
     </>
   );
 };
+
+
 
 DetailPage.getLayout = function getLayout(page: React.ReactElement) {
   return <LandingLayout>{page}</LandingLayout>;

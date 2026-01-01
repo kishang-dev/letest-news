@@ -11,6 +11,7 @@ import {
   onSnapshot,
   Query,
   DocumentData,
+  limit,
 } from "firebase/firestore";
 import { app } from "@/lib/firebase";
 
@@ -73,7 +74,8 @@ export default function Home() {
 
     let q: Query<DocumentData> = query(
       collection(db, "news"),
-      orderBy("createdAt", "desc")
+      orderBy("createdAt", "desc"),
+      limit(50)
     );
 
     // Apply category filter if not "Home"
@@ -81,7 +83,8 @@ export default function Home() {
       q = query(
         collection(db, "news"),
         where("categories", "array-contains", category as string),
-        orderBy("createdAt", "desc")
+        orderBy("createdAt", "desc"),
+        limit(50)
       );
     }
 
@@ -160,7 +163,6 @@ export default function Home() {
       goToPage(1);
     }
   }, [currentPage, totalPages, goToPage]);
-
   return (
     <div>
       {/* Featured Carousel - Only on Home & no search */}

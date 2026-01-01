@@ -11,6 +11,7 @@ type News = {
   categories: string[];
   createdAt: any;
   updatedAt?: any;
+  image?: string; // Add explicit image field
 };
 
 export default function NewsCard({ news }: { news: News }) {
@@ -18,66 +19,67 @@ export default function NewsCard({ news }: { news: News }) {
 
 
   const extractFirstImageUrl = (htmlContent: string): string | null => {
-  if (!htmlContent) return null;
-  
-  try {
-    // Create a temporary DOM element to parse HTML
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = htmlContent;
-    
-    // Find the first img element
-    const firstImg = tempDiv.querySelector('img');
-    
-    if (firstImg) {
-      const src = firstImg.getAttribute('src');
-      // Handle relative URLs by converting them to absolute URLs if needed
-      if (src) {
-        // If it's a relative URL, you might want to prepend your domain
+    if (!htmlContent) return null;
+
+    try {
+      // Use regex to find the first img tag and extract src
+      // This works on both client and server side
+      const imgRegex = /<img[^>]+src="([^">]+)"/i;
+      const match = htmlContent.match(imgRegex);
+
+      if (match && match[1]) {
+        let src = match[1];
+
+        // Handle relative URLs
         if (src.startsWith('/')) {
-          return `${window.location.origin}${src}`;
+          // On server side, we might not have window.location
+          // But for images, they should usually be absolute URLs (Firebase Storage)
+          // If strictly relative, we try to use process.env.NEXT_PUBLIC_URL or window.location
+          if (typeof window !== 'undefined') {
+            return `${window.location.origin}${src}`;
+          }
+          return src; // Return as is for SSR if we can't resolve origin
         }
         return src;
       }
+      return null;
+    } catch (error) {
+      console.error('Error extracting image from HTML:', error);
+      return null;
     }
-    
-    return null;
-  } catch (error) {
-    console.error('Error extracting image from HTML:', error);
-    return null;
-  }
-};
+  };
 
 
-  const firstImageUrl = extractFirstImageUrl(news?.content);
+  // Prioritize explicitly set image, then fallback to content extraction
+  const displayImage = news.image || extractFirstImageUrl(news?.content);
 
-  console.log('Extracted Image URL:', firstImageUrl);
-  
+  console.log('Display Image URL:', displayImage);
+
   return (
     <div
       key={news?.id}
       className="h-full group cursor-pointer rounded-lg overflow-hidden transition-colors duration-300 
              bg-white hover:bg-gray-100 dark:bg-gray-900 dark:hover:bg-gray-800"
-     onClick={() =>{
+      onClick={() => {
 
-       router.push({
-    pathname: "/news",
-    query: { id: news.id },
-  })
-     }
- 
-}
+        router.push({
+          pathname: "/news",
+          query: { id: news.id },
+        })
+      }
+
+      }
     >
       {/* Image Section with Lazy Loading */}
       <div className="relative overflow-hidden h-48">
         <Image
-          src={firstImageUrl || 'https://placehold.co/600x400/png'}
+          src={displayImage || 'https://placehold.co/600x400/png?text=No+Image'}
           alt={news?.title || 'News article image'}
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           className="object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
-          placeholder="blur"
-          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
+          // placeholder="blur" // Disable blur placeholder to avoid base64 large string complexity + potential hydration mismatch
           priority={false}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div>

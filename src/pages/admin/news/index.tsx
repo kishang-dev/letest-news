@@ -2,18 +2,18 @@
 
 import React, { useState, useEffect } from "react";
 import { app } from "@/lib/firebase";
-import { getFirestore, collection, getDocs, query, orderBy, deleteDoc, doc } from "firebase/firestore";
+import { getFirestore, collection, getDocs, query, orderBy, deleteDoc, doc, limit, startAfter, DocumentSnapshot } from "firebase/firestore";
 import Link from "next/link";
-import { 
-  Plus, 
-  Edit3, 
-  Trash2, 
-  Calendar, 
-  Clock, 
-  FileText, 
-  Loader2, 
-  AlertCircle, 
-  CheckCircle, 
+import {
+  Plus,
+  Edit3,
+  Trash2,
+  Calendar,
+  Clock,
+  FileText,
+  Loader2,
+  AlertCircle,
+  CheckCircle,
   Search,
   Filter,
   Grid3X3,
@@ -33,38 +33,78 @@ interface NewsItem {
   updatedAt: any; // Firestore Timestamp
 }
 
-const  NewsList = () => {
+const NEWS_PER_PAGE = 10;
+
+const NewsList = () => {
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchTerm, setSearchTerm] = useState('');
+  const [lastDoc, setLastDoc] = useState<DocumentSnapshot | null>(null);
+  const [hasMore, setHasMore] = useState(true);
 
   const db = getFirestore(app);
 
-  // Fetch news from Firestore
-  useEffect(() => {
-    const fetchNews = async () => {
+  const fetchNews = async (isLoadMore = false) => {
+    if (isLoadMore) {
+      setLoadingMore(true);
+    } else {
       setLoading(true);
-      setError(null);
-      try {
-        const newsQuery = query(collection(db, "news"), orderBy("createdAt", "desc"));
-        const querySnapshot = await getDocs(newsQuery);
-        const newsData = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as NewsItem[];
-        setNewsItems(newsData);
-      } catch (err) {
-        console.error("Failed to fetch news:", err);
-        setError("Failed to load news. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
+    }
+    setError(null);
 
-    fetchNews();
+    try {
+      let newsQuery;
+      const newsCollection = collection(db, "news");
+
+      if (isLoadMore && lastDoc) {
+        newsQuery = query(
+          newsCollection,
+          orderBy("createdAt", "desc"),
+          startAfter(lastDoc),
+          limit(NEWS_PER_PAGE)
+        );
+      } else {
+        newsQuery = query(
+          newsCollection,
+          orderBy("createdAt", "desc"),
+          limit(NEWS_PER_PAGE)
+        );
+      }
+
+      const querySnapshot = await getDocs(newsQuery);
+      const newData = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as NewsItem[];
+
+      // Update Last Doc
+      const lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
+      setLastDoc(lastVisible || null);
+
+      // Check if we have more
+      setHasMore(querySnapshot.docs.length === NEWS_PER_PAGE);
+
+      if (isLoadMore) {
+        setNewsItems(prev => [...prev, ...newData]);
+      } else {
+        setNewsItems(newData);
+      }
+    } catch (err) {
+      console.error("Failed to fetch news:", err);
+      setError("Failed to load news. Please try again.");
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  // Initial Fetch
+  useEffect(() => {
+    fetchNews(false);
   }, [db]);
 
   // Handle delete
@@ -75,14 +115,8 @@ const  NewsList = () => {
     try {
       await deleteDoc(doc(db, "news", id));
       setSuccess("News deleted successfully!");
-      // Refresh the list
-      const newsQuery = query(collection(db, "news"), orderBy("createdAt", "desc"));
-      const querySnapshot = await getDocs(newsQuery);
-      const newsData = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as NewsItem[];
-      setNewsItems(newsData);
+      // Remove from local state to avoid refetch
+      setNewsItems(prev => prev.filter(item => item.id !== id));
     } catch (err) {
       console.error("Failed to delete news:", err);
       setError("Failed to delete news. Please try again.");
@@ -121,7 +155,7 @@ const  NewsList = () => {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
               <div className="flex items-center space-x-2 text-white/80">
                 <TrendingUp className="w-5 h-5" />
@@ -160,21 +194,19 @@ const  NewsList = () => {
               <div className="flex items-center bg-gray-100 rounded-lg p-1">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-2 rounded-md transition-all duration-200 ${
-                    viewMode === 'grid' 
-                      ? 'bg-white shadow-sm text-indigo-600' 
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
+                  className={`p-2 rounded-md transition-all duration-200 ${viewMode === 'grid'
+                    ? 'bg-white shadow-sm text-indigo-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                    }`}
                 >
                   <Grid3X3 className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-2 rounded-md transition-all duration-200 ${
-                    viewMode === 'list' 
-                      ? 'bg-white shadow-sm text-indigo-600' 
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
+                  className={`p-2 rounded-md transition-all duration-200 ${viewMode === 'list'
+                    ? 'bg-white shadow-sm text-indigo-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                    }`}
                 >
                   <List className="w-4 h-4" />
                 </button>
@@ -223,7 +255,7 @@ const  NewsList = () => {
               {searchTerm ? 'No articles found' : 'No articles yet'}
             </h3>
             <p className="text-gray-500 mb-8 max-w-sm mx-auto">
-              {searchTerm 
+              {searchTerm
                 ? 'Try adjusting your search terms or filters'
                 : 'Get started by creating your first news article'
               }
@@ -242,17 +274,15 @@ const  NewsList = () => {
 
         {/* Articles Grid/List */}
         {!loading && filteredNews.length > 0 && (
-          <div className={`${
-            viewMode === 'grid' 
-              ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6' 
-              : 'space-y-4'
-          }`}>
+          <div className={`${viewMode === 'grid'
+            ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
+            : 'space-y-4'
+            }`}>
             {filteredNews.map((item) => (
               <article
                 key={item.id}
-                className={`bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 group ${
-                  viewMode === 'list' ? 'flex flex-col sm:flex-row' : ''
-                }`}
+                className={`bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 group ${viewMode === 'list' ? 'flex flex-col sm:flex-row' : ''
+                  }`}
               >
                 {viewMode === 'grid' ? (
                   // Grid View
@@ -283,7 +313,7 @@ const  NewsList = () => {
                         <MoreHorizontal className="w-4 h-4 text-gray-400" />
                       </button>
                     </div>
-                    
+
                     <div className="mb-6">
                       <p className="text-gray-600 line-clamp-3 leading-relaxed">
                         {stripHtml(item.content)}
@@ -364,10 +394,23 @@ const  NewsList = () => {
             ))}
           </div>
         )}
+        {/* Load More Button */}
+        {!loading && hasMore && !searchTerm && (
+          <div className="flex justify-center mt-8 pb-8">
+            <button
+              onClick={() => fetchNews(true)}
+              disabled={loadingMore}
+              className="px-6 py-3 bg-white border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-all shadow-sm flex items-center space-x-2"
+            >
+              {loadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
+              <span>{loadingMore ? "Loading more..." : "Load More Articles"}</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
 
-export default  withAdminAuth(NewsList);
+export default withAdminAuth(NewsList);
