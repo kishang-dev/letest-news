@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react';
 import Image from 'next/image';
 import TimeAgo from '@/components/common/TimeAgo';
 import { useRouter } from 'next/router';
@@ -16,6 +17,7 @@ type News = {
 
 export default function NewsCard({ news }: { news: News }) {
   const router = useRouter();
+  const [imageLoading, setImageLoading] = useState(true);
 
 
   const extractFirstImageUrl = (htmlContent: string): string | null => {
@@ -70,17 +72,18 @@ export default function NewsCard({ news }: { news: News }) {
 
       }
     >
-      {/* Image Section with Lazy Loading */}
-      <div className="relative overflow-hidden h-48">
+      {/* Image Section with Lazy Loading Effect */}
+      <div className="relative overflow-hidden h-48 bg-gray-200 dark:bg-gray-800">
         <Image
           src={displayImage || 'https://placehold.co/600x400/png?text=No+Image'}
           alt={news?.title || 'News article image'}
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          className="object-cover group-hover:scale-105 transition-transform duration-300"
+          className={`object-cover transition-all duration-700 ease-in-out
+            ${imageLoading ? 'opacity-0 scale-105 blur-sm' : 'opacity-100 scale-100 blur-0'}
+            group-hover:scale-105`}
+          onLoad={() => setImageLoading(false)}
           loading="lazy"
-          // placeholder="blur" // Disable blur placeholder to avoid base64 large string complexity + potential hydration mismatch
-          priority={false}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div>
       </div>

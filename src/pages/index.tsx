@@ -203,12 +203,10 @@ export default function Home() {
         {/* Main News Grid */}
         <div className="flex-1">
           {loading ? (
-            <div className="container mx-auto px-4 py-10 min-h-screen">
-              <div className="flex items-center justify-center">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-gray-100 mx-auto mb-4"></div>
-                  <p className="text-gray-500 text-lg">Loading...</p>
-                </div>
+            <div className="min-h-[60vh] flex items-center justify-center w-full">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-white mx-auto mb-4"></div>
+                <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">Loading...</p>
               </div>
             </div>
           ) : displayedNews.length === 0 ? (
