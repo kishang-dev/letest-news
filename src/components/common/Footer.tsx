@@ -17,6 +17,7 @@ const Footer = () => {
   ];
 
   const footerLinks = [
+    { label: "ABOUT US", value: "/about-us" },
     { label: "CONTACT US", value: "/contact-us" },
     { label: "PRIVACY POLICY", value: "/privacy-policy" },
     { label: "COOKIE POLICY", value: "/cookie-policy" },
@@ -24,7 +25,7 @@ const Footer = () => {
   ];
 
   // Set active item based on URL category parameter
-useEffect(() => {
+  useEffect(() => {
     const cat = router.query.category;
     if (typeof cat === "string") {
       setActiveItem(decodeURIComponent(cat));
@@ -33,7 +34,7 @@ useEffect(() => {
     }
   }, [router.query]);
 
- const handleClick = (value: string) => {
+  const handleClick = (value: string) => {
     setActiveItem(value);
 
     // Start from the current query object (preserves other params)
@@ -56,8 +57,8 @@ useEffect(() => {
   const getNavLinkClasses = (item: string) => {
     const isActive = activeItem === item;
     return `cursor-pointer transition-all duration-200 block py-2 px-3 rounded-md ${isActive
-        ? "text-blue-600 dark:text-blue-400   font-medium border-l-2 border-blue-600 dark:border-blue-400"
-        : "text-muted-foreground hover:text-foreground hover:bg-accent"
+      ? "text-blue-600 dark:text-blue-400   font-medium border-l-2 border-blue-600 dark:border-blue-400"
+      : "text-muted-foreground hover:text-foreground hover:bg-accent"
       }`;
   };
 
@@ -176,7 +177,7 @@ useEffect(() => {
             </p>
             <div className="flex flex-wrap gap-4">
               {footerLinks.map((link, index) => {
-const isActive = router.pathname === link.value;
+                const isActive = router.pathname === link.value;
                 return (
                   <span key={link.value} className="flex items-center">
                     <a
@@ -185,8 +186,8 @@ const isActive = router.pathname === link.value;
                         router.push(link.value);
                       }}
                       className={`text-sm transition-colors cursor-pointer ${isActive
-                          ? "text-blue-600 font-medium" // Active state - primary color and bold
-                          : "text-muted-foreground hover:text-foreground" // Inactive state
+                        ? "text-blue-600 font-medium" // Active state - primary color and bold
+                        : "text-muted-foreground hover:text-foreground" // Inactive state
                         }`}
                     >
                       {link.label}

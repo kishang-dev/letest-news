@@ -5,14 +5,14 @@ const nextConfig = {
   reactStrictMode: true,
 
   images: {
-    unoptimized: true, 
+    unoptimized: true,
     domains: [
       "placehold.co",
-      "worldwideshortnews.com", 
+      "worldwideshortnews.com",
       "firebasestorage.googleapis.com"
     ],
   },
- env: {
+  env: {
     NEXT_PUBLIC_FIREBASE_API_KEY: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'AIzaSyDs39amkJgk1bHf1hHIbS9wQbhDuAuEROg',
     NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || 'news-9a080.firebaseapp.com',
     NEXT_PUBLIC_FIREBASE_PROJECT_ID: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'news-9a080',
@@ -22,38 +22,14 @@ const nextConfig = {
   },
   compiler: {
     removeConsole: {
-      exclude: ["error"], 
+      exclude: ["error"],
     },
   },
 
   distDir: ".next",
 
 
-   async rewrites() {
-    return [
-      {
-        source: "/ads.txt",
-        destination: "/ads.txt",
-      },
-      {
-        source: "/ads.txt/",
-        destination: "/ads.txt",
-      },
-    ];
-  },
-
-  // ✅ ALSO MAKE SURE THE FILE IS COPIED IN EXPORT OUTPUT
-  async headers() {
-    return [
-      {
-        source: "/ads.txt",
-        headers: [
-          { key: "Content-Type", value: "text/plain" },
-          { key: "Cache-Control", value: "no-store, must-revalidate" },
-        ],
-      },
-    ];
-  },
 };
 
 module.exports = nextConfig;
+

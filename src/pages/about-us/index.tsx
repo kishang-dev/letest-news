@@ -2,7 +2,7 @@ import LandingLayout from '@/layouts/LandingLayout';
 import { Mail, MapPin, Briefcase, TrendingUp, MessageCircle } from 'lucide-react';
 
 
-const  About = () => {
+const About = () => {
     return (
 
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -31,7 +31,7 @@ const  About = () => {
                     </div>
                 </section>
 
-                <section className="text-center mb-12">
+                {/* <section className="text-center mb-12">
                     <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">Our Team</h3>
                     <p className="text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-6">
                         Our team consists of passionate journalists and editors committed to delivering high-quality content. We work tirelessly to bring you the news that matters most.
@@ -53,9 +53,9 @@ const  About = () => {
                             <p className="text-gray-500 dark:text-gray-400">Executive Editor</p>
                         </div>
                     </div>
-                </section>
+                </section> */}
 
-                <section className="py-20 px-4 relative overflow-hidden">
+                {/* <section className="py-20 px-4 relative overflow-hidden">
 
                     <div className="relative max-w-7xl mx-auto">
                         <div className="text-center mb-16">
@@ -71,7 +71,6 @@ const  About = () => {
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-                            {/* Address Card */}
                             <div className="group">
                                 <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20 dark:border-gray-700/50 hover:shadow-3xl hover:-translate-y-2 transition-all duration-500">
                                     <div className="flex items-center mb-6">
@@ -82,25 +81,23 @@ const  About = () => {
                                     </div>
 
                                     <div className="space-y-2 text-gray-600 dark:text-gray-300 leading-relaxed">
-                                        <p className="font-semibold text-gray-800 dark:text-gray-200">Network18 Media & Investment Ltd</p>
-                                        <p>Shree Ram Mill Compound,</p>
-                                        <p>Vrindavan Building,</p>
-                                        <p>Ganpatrao Kadam Marg,</p>
-                                        <p className="font-medium">Worli, Mumbai-400013</p>
+                                        <p className="font-semibold text-gray-800 dark:text-gray-200">Worldwide Short News</p>
+                                        <p>Digital Media Center,</p>
+                                        <p>Information Technology Park,</p>
+                                        <p>Global Hub,</p>
+                                        <p className="font-medium">International Business District</p>
                                     </div>
 
-                                    {/* Decorative element */}
                                     <div className="mt-6 h-1 w-20 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full group-hover:w-32 transition-all duration-500"></div>
                                 </div>
                             </div>
 
-                            {/* Contact Methods */}
                             <div className="space-y-6">
                                 {[
                                     {
                                         icon: MessageCircle,
                                         title: "Press Release",
-                                        email: "pressrelease@text.com",
+                                        email: "press@worldwideshortnews.com",
                                         description: "Share your news and announcements",
                                         gradient: "from-rose-500 to-pink-500",
                                         bgGradient: "from-rose-50 to-pink-50 dark:from-rose-900/20 dark:to-pink-900/20"
@@ -108,7 +105,7 @@ const  About = () => {
                                     {
                                         icon: Mail,
                                         title: "Feedback",
-                                        email: "feedback@text.com",
+                                        email: "contact@worldwideshortnews.com",
                                         description: "We value your thoughts and suggestions",
                                         gradient: "from-blue-500 to-cyan-500",
                                         bgGradient: "from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20"
@@ -116,15 +113,15 @@ const  About = () => {
                                     {
                                         icon: Briefcase,
                                         title: "Careers",
-                                        email: "jobs@text.com",
+                                        email: "careers@worldwideshortnews.com",
                                         description: "Join our talented team",
                                         gradient: "from-violet-500 to-purple-500",
-                                        bgGradient: "from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20"
+                                        bgGradient: "from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-violet-900/20"
                                     },
                                     {
                                         icon: TrendingUp,
                                         title: "Advertising",
-                                        email: "ads@text.com",
+                                        email: "ads@worldwideshortnews.com",
                                         description: "Explore partnership opportunities",
                                         gradient: "from-amber-500 to-orange-500",
                                         bgGradient: "from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20"
@@ -162,7 +159,7 @@ const  About = () => {
                             </div>
                         </div>
                     </div>
-                </section>
+                </section> */}
             </main>
         </div>
     );
@@ -170,7 +167,7 @@ const  About = () => {
 
 
 About.getLayout = function getLayout(page: React.ReactElement) {
-  return <LandingLayout>{page}</LandingLayout>;
+    return <LandingLayout>{page}</LandingLayout>;
 };
 
 export default About;

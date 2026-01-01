@@ -3,6 +3,7 @@ import "@/styles/globals.css";
 import Head from "next/head";
 import type { AppProps } from "next/app";
 import type { NextPage } from "next";
+import Script from "next/script";
 
 export type NextPageWithLayout = NextPage & {
   getLayout?: (page: React.ReactElement) => React.ReactNode;
@@ -53,6 +54,14 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
         <meta name="twitter:image:alt" content={siteName} />
       </Head>
 
+      {process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_CLIENT_ID && (
+        <Script
+          async
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_CLIENT_ID}`}
+        />
+      )}
       {getLayout(<Component {...pageProps} />)}
     </>
   );

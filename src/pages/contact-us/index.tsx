@@ -82,8 +82,11 @@ const ContactUs = () => {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col mb-8">
         <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-800">Contact Us</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-2">
+          Have questions or feedback? We'd love to hear from you. Reach out to us at <a href="mailto:contact@worldwideshortnews.com" className="text-blue-600 hover:underline">contact@worldwideshortnews.com</a> or use the form below.
+        </p>
       </div>
 
       <div className="">

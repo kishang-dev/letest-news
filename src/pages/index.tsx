@@ -51,7 +51,7 @@ export default function Home() {
   // Update URL page
   const goToPage = useCallback(
     (page: number) => {
-      const newQuery:any = { ...router.query };
+      const newQuery: any = { ...router.query };
       if (page === 1) delete newQuery.page;
       else newQuery.page = page;
 
@@ -59,7 +59,7 @@ export default function Home() {
         shallow: true,
       });
 
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
 
     },
     [router]
@@ -169,7 +169,7 @@ export default function Home() {
           <div className="flex">
             {featuredNews.map((news) => (
               <div key={news.id} className="flex-[0_0_100%] md:flex-[0_0_50%] p-2">
-                <NewsCard news={news}  />
+                <NewsCard news={news} />
               </div>
             ))}
           </div>
@@ -202,21 +202,21 @@ export default function Home() {
         <div className="flex-1">
           {loading ? (
             <div className="container mx-auto px-4 py-10 min-h-screen">
-        <div className="flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-gray-100 mx-auto mb-4"></div>
-            <p className="text-gray-500 text-lg">Loading...</p>
-          </div>
-        </div>
-      </div>
+              <div className="flex items-center justify-center">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-gray-100 mx-auto mb-4"></div>
+                  <p className="text-gray-500 text-lg">Loading...</p>
+                </div>
+              </div>
+            </div>
           ) : displayedNews.length === 0 ? (
             <div className="text-center py-20 text-gray-500">
               <p className="text-2xl font-medium">
                 {isSearchMode
                   ? `No results found for "${searchQuery}"`
                   : category && category !== "Home"
-                  ? `No articles in ${category} yet`
-                  : "No news available at the moment"}
+                    ? `No articles in ${category} yet`
+                    : "No news available at the moment"}
               </p>
             </div>
           ) : (
@@ -244,15 +244,17 @@ export default function Home() {
 
         {/* Sidebar Ads */}
         <aside className="w-full lg:w-80">
-          <div className="sticky top-24 space-y-6">
-            <div className="bg-gray-100 dark:bg-gray-800 border-2 border-dashed rounded-xl p-6 text-center">
-              <p className="text-xs text-gray-500 mb-3">Advertisement</p>
-              <ResponsiveAd dataAdSlot="2285841467" />
+          {!loading && displayedNews.length > 0 && (
+            <div className="sticky top-24 space-y-6">
+              <div className="bg-gray-100 dark:bg-gray-800 border-2 border-dashed rounded-xl p-6 text-center">
+                <p className="text-xs text-gray-500 mb-3">Advertisement</p>
+                <ResponsiveAd dataAdSlot="2285841467" />
+              </div>
+              <div className="bg-gray-200 dark:bg-gray-700 h-64 rounded-xl flex items-center justify-center text-gray-500 font-medium">
+                300×250 Ad
+              </div>
             </div>
-            <div className="bg-gray-200 dark:bg-gray-700 h-64 rounded-xl flex items-center justify-center text-gray-500 font-medium">
-              300×250 Ad
-            </div>
-          </div>
+          )}
         </aside>
       </div>
     </div>

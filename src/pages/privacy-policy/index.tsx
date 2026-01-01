@@ -10,7 +10,7 @@ const PrivacyPolicy = () => {
             Privacy Policy
           </h1>
           <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1 sm:mt-2">
-            Effective Date: January 1, 2024
+            Effective Date: December 28, 2025
           </p>
         </div>
       </div>
@@ -18,7 +18,7 @@ const PrivacyPolicy = () => {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-3 xs:px-4 sm:px-6 lg:px-8 py-6 sm:py-8 md:py-12">
         <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow-sm p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8">
-          
+
           {/* Introduction */}
           <section>
             <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
@@ -60,10 +60,28 @@ const PrivacyPolicy = () => {
             </ul>
           </section>
 
+          {/* Advertising - Added for AdSense Compliance */}
+          <section>
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
+              4. Advertising
+            </h2>
+            <div className="space-y-3 text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed">
+              <p>
+                We use third-party advertising companies to serve ads when you visit our Web site. These companies may use aggregated information (not including your name, address, email address or telephone number) about your visits to this and other Web sites in order to provide advertisements about goods and services of interest to you.
+              </p>
+              <p>
+                <strong>Google AdSense:</strong> Third party vendors, including Google, use cookies to serve ads based on a user's prior visits to your website or other websites. Google's use of advertising cookies enables it and its partners to serve ads to your users based on their visit to your sites and/or other sites on the Internet.
+              </p>
+              <p>
+                Users may opt out of personalized advertising by visiting <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Google Ads Settings</a>. Alternatively, you can opt out of a third-party vendor's use of cookies for personalized advertising by visiting <a href="http://www.aboutads.info/choices/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">www.aboutads.info</a>.
+              </p>
+            </div>
+          </section>
+
           {/* Information Sharing */}
           <section>
             <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
-              4. Information Sharing
+              5. Information Sharing
             </h2>
             <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed break-words">
               We do not sell or share your personal information with third parties, except when required by law or with your explicit consent.
@@ -73,7 +91,7 @@ const PrivacyPolicy = () => {
           {/* Data Security */}
           <section>
             <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
-              5. Data Security
+              6. Data Security
             </h2>
             <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed break-words">
               We implement reasonable security measures to protect your personal information from unauthorized access, use, or disclosure.
@@ -83,7 +101,7 @@ const PrivacyPolicy = () => {
           {/* Your Rights */}
           <section>
             <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
-              6. Your Rights
+              7. Your Rights
             </h2>
             <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed mb-2 sm:mb-3">
               You have the right to:
@@ -99,7 +117,7 @@ const PrivacyPolicy = () => {
           {/* Third Party Links */}
           <section>
             <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
-              7. Third-Party Links
+              8. Third-Party Links
             </h2>
             <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed break-words">
               Our website may contain links to other websites. We are not responsible for the privacy practices of those sites.
@@ -109,7 +127,7 @@ const PrivacyPolicy = () => {
           {/* Changes */}
           <section>
             <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
-              8. Changes to This Policy
+              9. Changes to This Policy
             </h2>
             <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed break-words">
               We may update this Privacy Policy from time to time. Changes will be posted on this page with a new effective date.
