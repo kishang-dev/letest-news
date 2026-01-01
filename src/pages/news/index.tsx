@@ -221,7 +221,7 @@ const DetailPage = () => {
           </h1>
 
           {/* Display Featured Image or First Content Image */}
-          {(news.image || extractFirstImageFromContent(news.content)) && (
+          {/* {(news.image || extractFirstImageFromContent(news.content)) && (
             <div className="relative w-full h-96 mb-8 rounded-xl overflow-hidden shadow-lg">
               <Image
                 src={news.image || extractFirstImageFromContent(news.content) || ""}
@@ -231,7 +231,7 @@ const DetailPage = () => {
                 priority
               />
             </div>
-          )}
+          )} */}
 
           <div
             className="prose prose-lg max-w-none dark:prose-invert ck-content 

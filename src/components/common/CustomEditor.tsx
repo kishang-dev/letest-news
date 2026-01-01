@@ -1,21 +1,19 @@
 // components/common/CustomEditor.tsx
 "use client";
 
-import React, { useMemo, useRef, useEffect } from "react";
+import React, { useMemo, useRef, useEffect, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import "quill/dist/quill.snow.css";
 import { processEditorImage } from "@/utils/imageProcessor";
 
 const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false }) as any;
 
-// *** IMPORTANT: Update the interface to include the new props ***
 interface CustomEditorProps {
   value: string;
   onChange: (content: string) => void;
   placeholder?: string;
   readOnly?: boolean;
   height?: string;
-  // Define the new props here
   onImageUpload: (file: File) => Promise<string>;
   onVideoUpload: (file: File) => Promise<string>;
 }
@@ -26,14 +24,42 @@ export default function CustomEditor({
   placeholder = "Write something...",
   readOnly = false,
   height = "300px",
-  // *** Destructure the new props here ***
   onImageUpload,
   onVideoUpload,
 }: CustomEditorProps) {
   const quillRef = useRef<any>(null);
+  const [isClient, setIsClient] = useState(false);
+  const [editorReady, setEditorReady] = useState(false);
 
-  // Helper to handle file upload and insertion
-  const handleFileUpload = async (file: File, type: "image" | "video") => {
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Helper to get the Quill editor instance
+  const getQuillInstance = () => {
+    if (!quillRef.current) return null;
+
+    // Try different ways to access the Quill instance
+    if (quillRef.current.getEditor) {
+      return quillRef.current.getEditor();
+    }
+    if (quillRef.current.editor) {
+      return quillRef.current.editor;
+    }
+    if (quillRef.current.quill) {
+      return quillRef.current.quill;
+    }
+
+    return quillRef.current;
+  };
+
+  // Handle editor initialization
+  const handleEditorReady = () => {
+    setEditorReady(true);
+  };
+
+  // Helper to handle file upload and insertion - FIXED VERSION
+  const handleFileUpload = useCallback(async (file: File, type: "image" | "video") => {
     try {
       console.log(`Starting ${type} upload for file:`, file.name);
 
@@ -54,68 +80,113 @@ export default function CustomEditor({
         throw new Error("Upload returned empty URL");
       }
 
-      // Robustly get the quill instance
-      let quill = quillRef.current?.editor;
-      if (!quill && quillRef.current?.getEditor) {
-        quill = quillRef.current.getEditor();
-      }
+      // Get the Quill instance
+      const quill = getQuillInstance();
 
-      if (quill) {
-        // Ensure editor has focus or insert at end
-        // If we lost focus (due to file dialog), getSelection might be null.
-        const range = quill.getSelection(true); // true forces focus check? No, looks at current selection.
+      // Method 1: Use Quill's API if available
+      if (quill && quill.insertEmbed && typeof quill.insertEmbed === 'function') {
+        try {
+          // Try to get selection, fallback to end
+          let index = 0;
 
-        let index = quill.getLength(); // Default to end
-        if (range) {
-          index = range.index;
-        } else {
-          // If no selection, we insert at the end.
-          // But we try to safeguard against inserting "after" the trailing newline?
-          // Quill usually handles index=length fine (appends).
+          if (quill.getSelection && typeof quill.getSelection === 'function') {
+            const range = quill.getSelection();
+            index = range ? range.index : quill.getLength();
+          } else if (quill.getLength && typeof quill.getLength === 'function') {
+            index = quill.getLength();
+          }
+
+          console.log(`Inserting ${type} at index ${index} using insertEmbed`);
+          quill.insertEmbed(index, type, downloadURL);
+
+          // Move cursor after the inserted content
+          setTimeout(() => {
+            if (quill.setSelection && typeof quill.setSelection === 'function') {
+              quill.setSelection(index + 1, 0);
+            }
+          }, 100);
+
+          return;
+        } catch (error) {
+          console.warn("Quill insertEmbed failed, trying alternative method:", error);
         }
-
-        console.log(`Inserting ${type} at index ${index}`);
-        quill.insertEmbed(index, type, downloadURL);
-
-        // Move cursor after the image
-        quill.setSelection(index + 1);
-      } else {
-        console.error("Quill editor instance not found!");
       }
+
+      // Method 2: Use dangerouslyPasteHTML to preserve existing content
+      if (quill && quill.clipboard && quill.clipboard.dangerouslyPasteHTML) {
+        try {
+          // Get current cursor position
+          let index = 0;
+          if (quill.getSelection && typeof quill.getSelection === 'function') {
+            const range = quill.getSelection();
+            index = range ? range.index : quill.getLength();
+          } else if (quill.getLength && typeof quill.getLength === 'function') {
+            index = quill.getLength();
+          }
+
+          const embedHtml = type === 'image'
+            ? `<img src="${downloadURL}" alt="${file.name}" />`
+            : `<video controls><source src="${downloadURL}" type="${file.type}"></video>`;
+
+          console.log(`Inserting ${type} at index ${index} using dangerouslyPasteHTML`);
+          quill.clipboard.dangerouslyPasteHTML(index, embedHtml);
+          return;
+        } catch (error) {
+          console.warn("dangerouslyPasteHTML failed, trying final method:", error);
+        }
+      }
+
+      // Method 3: Fallback - get current HTML content, insert image, and update
+      const currentHtml = value || '';
+      const embedHtml = type === 'image'
+        ? `<img src="${downloadURL}" alt="${file.name}" />`
+        : `<video controls><source src="${downloadURL}" type="${file.type}"></video>`;
+
+      // Get cursor position from the DOM if possible
+      const editorElement = document.querySelector('.ql-editor');
+      if (editorElement) {
+        const selection = window.getSelection();
+        if (selection && selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0);
+          const preCaretRange = range.cloneRange();
+          preCaretRange.selectNodeContents(editorElement);
+          preCaretRange.setEnd(range.startContainer, range.startOffset);
+          const caretPosition = preCaretRange.toString().length;
+
+          // Insert at caret position
+          const newHtml = currentHtml.slice(0, caretPosition) + embedHtml + currentHtml.slice(caretPosition);
+          onChange(newHtml);
+          return;
+        }
+      }
+
+      // Last resort: append to the end
+      console.log("Appending image to the end");
+      const newHtml = currentHtml + embedHtml;
+      onChange(newHtml);
+
     } catch (error) {
       console.error(`${type} upload failed:`, error);
       alert(`Failed to upload ${type}. See console for details.`);
     }
-  };
-
+  }, [onImageUpload, onVideoUpload, value, onChange]);
 
   useEffect(() => {
-    let quill: any = null;
-    if (quillRef.current) {
-      // Handle different potential ref structures for ReactQuill
-      quill = quillRef.current.editor || (quillRef.current.getEditor ? quillRef.current.getEditor() : null);
-    }
+    if (!editorReady) return;
 
+    const quill = getQuillInstance();
     if (!quill) return;
-
-    // Custom matcher to intercept base64 images from paste
-    // This is a bit tricky with ReactQuill's module system, so we'll use a DOM listener approach
-    // for paste and drop events on the editor container.
 
     // Handler for Paste
     const handlePaste = async (e: ClipboardEvent) => {
-      // 1. Handle Files in Clipboard (e.g., Snipping Tool, direct image copy)
       if (e.clipboardData && e.clipboardData.items) {
         const items = Array.from(e.clipboardData.items);
         const imageItems = items.filter((item) => item.type.startsWith("image/"));
 
         if (imageItems.length > 0) {
-          e.preventDefault(); // allow mostly for text, but manual handle images
-          // Wait, if we preventDefault, text won't paste. 
-          // We should only preventDefault if we are handling it.
-          // Yet if there is mixed content, it's tricky. 
-          // For now, if there is ANY image, we assume it's an image paste intent or we extract images.
+          e.preventDefault(); // Prevent default to handle manually
 
+          // Process each image
           for (const item of imageItems) {
             const file = item.getAsFile();
             if (file) {
@@ -125,10 +196,6 @@ export default function CustomEditor({
           return;
         }
       }
-
-      // 2. Handle Base64 strings in HTML (if user copies from another web page)
-      // This is harder to catch via 'items'. ReactQuill usually handles HTML paste.
-      // We need a Matcher for this. See below.
     };
 
     // Handler for Drop
@@ -139,7 +206,8 @@ export default function CustomEditor({
         const videoFiles = files.filter((f) => f.type.startsWith("video/"));
 
         if (imageFiles.length > 0 || videoFiles.length > 0) {
-          e.preventDefault(); // Stop browser opening file
+          e.preventDefault();
+          e.stopPropagation();
 
           for (const file of imageFiles) {
             await handleFileUpload(file, "image");
@@ -151,41 +219,33 @@ export default function CustomEditor({
       }
     };
 
-    // Add Matcher to intercept Image Floats / Base64 pasted as HTML
-    // This runs when Quill processes pasted HTML.
-    quill.clipboard.addMatcher('IMG', (node: any, delta: any) => {
-      // If the image source is Base64, we want to upload it (if technicaly possible synchronously?)
-      // We CANNOT upload synchronously in a matcher.
-      // So we have to allow it, AND THEN trigger an upload? 
-      // OR we replace it with a placeholder, upload, and then replace placeholder.
+    // Check if clipboard methods exist before using them
+    if (quill.clipboard && quill.clipboard.addMatcher) {
+      quill.clipboard.addMatcher('IMG', (node: any, delta: any) => {
+        if (node.src && node.src.startsWith('data:image')) {
+          console.warn("Blocked Base64 image paste. Please upload the image file directly.");
+          return new (window as any).Delta();
+        }
+        return delta;
+      });
+    }
 
-      // For now, if it's base64, we might accept it but we really want to avoid it.
-      // A better approach is: strip it out and manually upload?
-      // Since we can't do async here, we'll let existing logic `handlePaste` catch raw files.
-      // If it's an `<img>` tag pasted from another site, it has a URL. That URL is fine (hotlinked) or we might want to proxy it.
-      // If it's a data: URL, we should kill it.
-
-      if (node.src && node.src.startsWith('data:image')) {
-        // Log warning or try to convert?
-        // Blocking it is safer for performance.
-        console.warn("Blocked Base64 image paste. Please upload the image file directly.");
-        return new (window as any).Delta(); // Return empty delta for this node (removes it)
-      }
-      return delta;
-    });
-
-    const editorNode = quill.root;
-    editorNode.addEventListener("paste", handlePaste);
-    editorNode.addEventListener("drop", handleDrop);
+    const editorNode = quill.root || quill.container;
+    if (editorNode) {
+      editorNode.addEventListener("paste", handlePaste);
+      editorNode.addEventListener("drop", handleDrop);
+    }
 
     return () => {
-      editorNode.removeEventListener("paste", handlePaste);
-      editorNode.removeEventListener("drop", handleDrop);
+      if (editorNode) {
+        editorNode.removeEventListener("paste", handlePaste);
+        editorNode.removeEventListener("drop", handleDrop);
+      }
     };
-  }, [onImageUpload, onVideoUpload]);
+  }, [editorReady, handleFileUpload]);
 
   // Image handler that uses the prop
-  const imageHandler = () => {
+  const imageHandler = useCallback(() => {
     const input = document.createElement("input");
     input.setAttribute("type", "file");
     input.setAttribute("accept", "image/*");
@@ -194,29 +254,13 @@ export default function CustomEditor({
     input.onchange = async () => {
       if (input.files && input.files.length > 0) {
         const file = input.files[0];
-        try {
-          // Process image: convert to WebP and compress
-          console.log('Processing toolbar image:', file.name, `(${(file.size / 1024).toFixed(2)} KB)`);
-          const processedFile = await processEditorImage(file);
-          console.log('Processed toolbar image:', processedFile.name, `(${(processedFile.size / 1024).toFixed(2)} KB)`);
-
-          // Call the passed-in prop function to handle the upload
-          const downloadURL = await onImageUpload(processedFile);
-          const quill = (ReactQuill as any).editor;
-          if (quill) {
-            const range = quill.getSelection();
-            quill.insertEmbed(range.index, "image", downloadURL);
-          }
-        } catch (error) {
-          console.error("Image upload failed in CustomEditor:", error);
-          // Optionally show a user-friendly error message
-        }
+        await handleFileUpload(file, "image");
       }
     };
-  };
+  }, [handleFileUpload]);
 
   // Video handler that uses the prop
-  const videoHandler = () => {
+  const videoHandler = useCallback(() => {
     const input = document.createElement("input");
     input.setAttribute("type", "file");
     input.setAttribute("accept", "video/*");
@@ -225,21 +269,10 @@ export default function CustomEditor({
     input.onchange = async () => {
       if (input.files && input.files.length > 0) {
         const file = input.files[0];
-        try {
-          // Call the passed-in prop function to handle the upload
-          const downloadURL = await onVideoUpload(file);
-          const quill = (ReactQuill as any).editor;
-          if (quill) {
-            const range = quill.getSelection();
-            quill.insertEmbed(range.index, "video", downloadURL);
-          }
-        } catch (error) {
-          console.error("Video upload failed in CustomEditor:", error);
-          // Optionally show a user-friendly error message
-        }
+        await handleFileUpload(file, "video");
       }
     };
-  };
+  }, [handleFileUpload]);
 
   const modules = useMemo(
     () => ({
@@ -258,12 +291,12 @@ export default function CustomEditor({
           ["clean"],
         ],
         handlers: {
-          image: imageHandler, // Assign the internal handler
-          video: videoHandler, // Assign the internal handler
+          image: imageHandler,
+          video: videoHandler,
         },
       },
     }),
-    [imageHandler, videoHandler] // Dependencies for useMemo
+    [imageHandler, videoHandler]
   );
 
   const formats = [
@@ -278,6 +311,11 @@ export default function CustomEditor({
     "link", "image", "video", "formula",
   ];
 
+  // Only render ReactQuill on the client
+  if (!isClient) {
+    return <div style={{ height, border: "1px solid #ccc" }} />;
+  }
+
   return (
     <div style={{ height }}>
       <ReactQuill
@@ -289,7 +327,11 @@ export default function CustomEditor({
         formats={formats}
         placeholder={placeholder}
         readOnly={readOnly}
-        style={{ height: "100%" }}
+        onFocus={handleEditorReady}
+        style={{
+          height: "calc(100% - 42px)",
+          minHeight: "200px"
+        }}
       />
     </div>
   );
