@@ -1,170 +1,195 @@
 import LandingLayout from '@/layouts/LandingLayout';
-import { Mail, MapPin, Briefcase, TrendingUp, MessageCircle } from 'lucide-react';
-
+import { Mail, MapPin, Briefcase, TrendingUp, ShieldCheck, Users } from 'lucide-react';
+import { Newspaper, CheckCircle } from 'lucide-react';
+import { useRouter } from 'next/router';
 
 const About = () => {
-    return (
 
+    const router = useRouter()
+    return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
             {/* Main Content */}
-            <main className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
-                <section className="text-center mb-12">
-                    <h2 className="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-gray-100 mb-4">About Us</h2>
-                    <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-                        Welcome to News, your trusted source for the latest updates and stories from around the world.
-                        We are dedicated to delivering accurate, timely, and unbiased news to keep you informed.
+            <main className="container mx-auto py-12 px-4 sm:px-6 lg:px-8">
+
+                {/* Header Section */}
+                <section className="text-center mb-16">
+                    <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-6 tracking-tight">
+                        About <span className="text-blue-600 dark:text-blue-400">Us</span>
+                    </h1>
+                    <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
+                        Welcome to <span className="font-semibold text-gray-900 dark:text-white">Worldwide Short News</span>.
+                        We are a digital-first news organization dedicated to delivering accurate, timely, and unbiased reporting
+                        from every corner of the globe. Our commitment is to truth and transparency.
                     </p>
                 </section>
 
-                <section className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-                        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-2">Our Mission</h3>
-                        <p className="text-gray-600 dark:text-gray-300">
-                            Our mission is to provide reliable and comprehensive news coverage, empowering our readers with knowledge to make informed decisions.
+                {/* Mission & Vision Grid */}
+                <section className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
+                    <div className="bg-white dark:bg-gray-800/50 p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow">
+                        <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mb-6">
+                            <TrendingUp className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Our Mission</h3>
+                        <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                            To empower our global audience with verified, comprehensive, and accessible news.
+                            We believe that information is a fundamental right, and we strive to bridge the gap
+                            between complex events and public understanding through clear, concise journalism.
                         </p>
                     </div>
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-                        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-2">Our Vision</h3>
-                        <p className="text-gray-600 dark:text-gray-300">
-                            We aim to be the leading news platform, fostering an informed community through integrity and innovation in journalism.
+                    <div className="bg-white dark:bg-gray-800/50 p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow">
+                        <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mb-6">
+                            <ShieldCheck className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Our Vision</h3>
+                        <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                            To become the world's most trusted source for digital news, fostering an informed community
+                            built on the pillars of integrity, accountability, and innovation in the media landscape.
                         </p>
                     </div>
                 </section>
 
-                {/* <section className="text-center mb-12">
-                    <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">Our Team</h3>
-                    <p className="text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-6">
-                        Our team consists of passionate journalists and editors committed to delivering high-quality content. We work tirelessly to bring you the news that matters most.
-                    </p>
-                    <div className="flex flex-wrap justify-center gap-6">
-                        <div className="w-48 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-                            <div className="h-24 w-24 mx-auto bg-gray-300 dark:bg-gray-600 rounded-full mb-2"></div>
-                            <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-100">John Doe</h4>
-                            <p className="text-gray-500 dark:text-gray-400">Editor-in-Chief</p>
+                {/* Editorial & Fact Checking Policy (Critical for AdSense) */}
+                <section className="mb-20">
+                    <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 md:p-12 shadow-sm border border-gray-100 dark:border-gray-700">
+                        <div className="text-center mb-12">
+                            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Our Standards</h2>
+                            <p className="text-gray-600 dark:text-gray-400">The principles that guide our reporting every single day.</p>
                         </div>
-                        <div className="w-48 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-                            <div className="h-24 w-24 mx-auto bg-gray-300 dark:bg-gray-600 rounded-full mb-2"></div>
-                            <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Jane Smith</h4>
-                            <p className="text-gray-500 dark:text-gray-400">Senior Reporter</p>
-                        </div>
-                        <div className="w-48 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-                            <div className="h-24 w-24 mx-auto bg-gray-300 dark:bg-gray-600 rounded-full mb-2"></div>
-                            <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Rakesh Rai</h4>
-                            <p className="text-gray-500 dark:text-gray-400">Executive Editor</p>
-                        </div>
-                    </div>
-                </section> */}
 
-                {/* <section className="py-20 px-4 relative overflow-hidden">
-
-                    <div className="relative max-w-7xl mx-auto">
-                        <div className="text-center mb-16">
-                            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full mb-6 shadow-lg">
-                                <Mail className="w-8 h-8 text-white" />
+                        <div className="grid md:grid-cols-2 gap-12">
+                            <div>
+                                <div className="flex items-center mb-4">
+                                    <Newspaper className="w-6 h-6 text-blue-600 mr-3" />
+                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">Editorial Policy</h3>
+                                </div>
+                                <p className="text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
+                                    Our editorial team operates with complete independence. We carefully select stories based on their public interest,
+                                    relevance, and impact. Every article is written to provide a neutral perspective, avoiding sensationalism
+                                    and focusing on the facts.
+                                </p>
+                                <ul className="space-y-3">
+                                    {[' unbiased reporting', 'Multiple source verification', 'Clear distinction between news and opinion'].map((item, i) => (
+                                        <li key={i} className="flex items-center text-gray-700 dark:text-gray-300 text-sm">
+                                            <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2"></div>
+                                            {item}
+                                        </li>
+                                    ))}
+                                </ul>
                             </div>
-                            <h3 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-4">
-                                Get in Touch
-                            </h3>
-                            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-                                We're here to help. Reach out to us through any of the channels below.
+
+                            <div>
+                                <div className="flex items-center mb-4">
+                                    <CheckCircle className="w-6 h-6 text-green-600 mr-3" />
+                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">Fact-Checking Policy</h3>
+                                </div>
+                                <p className="text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
+                                    Accuracy is non-negotiable. Our fact-checking process involves rigorous verification of data, quotes, and media.
+                                    If an error is discovered, we are committed to correcting it promptly and transparently.
+                                </p>
+                                <ul className="space-y-3">
+                                    {['Primary source validation', 'expert review for technical topics', 'Transparent correction validation'].map((item, i) => (
+                                        <li key={i} className="flex items-center text-gray-700 dark:text-gray-300 text-sm">
+                                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-2"></div>
+                                            {item}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Team Section */}
+                <section className="text-center mb-20">
+                    <div className="flex items-center justify-center mb-4 space-x-2">
+                        <Users className="w-6 h-6 text-blue-600" />
+                        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Our Leadership</h2>
+                    </div>
+                    <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-12">
+                        Driven by a team of experienced journalists and editors committed to excellence.
+                    </p>
+
+                    <div className="flex flex-wrap justify-center gap-8">
+                        {/* Team Member 1 */}
+                        <div className="w-64 bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-lg transition-all p-6 border border-gray-100 dark:border-gray-700">
+                            <div className="w-24 h-24 mx-auto bg-gray-200 dark:bg-gray-700 rounded-full mb-4 flex items-center justify-center text-gray-400">
+                                {/* Placeholder for Image */}
+                                <span className="text-2xl">JD</span>
+                            </div>
+                            <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Jinal Prajapati</h4>
+                            <p className="text-blue-600 dark:text-blue-400 font-medium text-sm mb-3">Editor-in-Chief</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm">
+                                15+ years in journalism, focusing on international relations and digital media transformation.
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-                            <div className="group">
-                                <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20 dark:border-gray-700/50 hover:shadow-3xl hover:-translate-y-2 transition-all duration-500">
-                                    <div className="flex items-center mb-6">
-                                        <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                                            <MapPin className="w-6 h-6 text-white" />
+
+                    </div>
+                </section>
+
+                {/* Contact Section */}
+                <section className="relative overflow-hidden rounded-3xl bg-gray-900 dark:bg-black text-white py-16 px-8">
+                    <div className="absolute top-0 right-0 p-12 opacity-10">
+                        <MapPin className="w-64 h-64 text-white transform rotate-12" />
+                    </div>
+
+                    <div className="relative z-10 max-w-6xl mx-auto">
+                        <div className="grid md:grid-cols-2 gap-12 items-center">
+                            <div>
+                                <h2 className="text-3xl font-bold mb-6">Get in Touch</h2>
+                                <p className="text-gray-400 mb-8 text-lg">
+                                    We value feedback from our readers. Whether you have a news tip, a correction, or an inquiry, we want to hear from you.
+                                </p>
+
+                                <div className="space-y-6">
+                                    <div className="flex items-start">
+                                        <MapPin className="w-6 h-6 text-blue-400 mt-1 mr-4 flex-shrink-0" />
+                                        <div>
+                                            <h4 className="font-semibold text-white">Headquarters</h4>
+                                            <p className="text-gray-400 mt-1">
+                                                Gandhinagar,382421, <br />
+                                                Zundal, Prajapati vas<br />
+                                            </p>
                                         </div>
-                                        <h4 className="text-2xl font-bold text-gray-800 dark:text-gray-100 ml-4">Our Office</h4>
                                     </div>
 
-                                    <div className="space-y-2 text-gray-600 dark:text-gray-300 leading-relaxed">
-                                        <p className="font-semibold text-gray-800 dark:text-gray-200">Worldwide Short News</p>
-                                        <p>Digital Media Center,</p>
-                                        <p>Information Technology Park,</p>
-                                        <p>Global Hub,</p>
-                                        <p className="font-medium">International Business District</p>
+                                    <div className="flex items-start">
+                                        <Mail className="w-6 h-6 text-blue-400 mt-1 mr-4 flex-shrink-0" />
+                                        <div>
+                                            <h4 className="font-semibold text-white">Email Us</h4>
+                                            <div className="grid sm:grid-cols-2 gap-4 mt-2">
+                                                <a href="mailto:contact@worldwideshortnews.com" className="text-gray-400 hover:text-white transition-colors">
+                                                    General: contact@worldwideshortnews.com
+                                                </a>
+                                                {/* <a href="mailto:press@worldwideshortnews.com" className="text-gray-400 hover:text-white transition-colors">
+                                                    Press: press@worldwideshortnews.com
+                                                </a>
+                                                <a href="mailto:ads@worldwideshortnews.com" className="text-gray-400 hover:text-white transition-colors">
+                                                    Ads: ads@worldwideshortnews.com
+                                                </a> */}
+                                            </div>
+                                        </div>
                                     </div>
-
-                                    <div className="mt-6 h-1 w-20 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full group-hover:w-32 transition-all duration-500"></div>
                                 </div>
                             </div>
 
-                            <div className="space-y-6">
-                                {[
-                                    {
-                                        icon: MessageCircle,
-                                        title: "Press Release",
-                                        email: "press@worldwideshortnews.com",
-                                        description: "Share your news and announcements",
-                                        gradient: "from-rose-500 to-pink-500",
-                                        bgGradient: "from-rose-50 to-pink-50 dark:from-rose-900/20 dark:to-pink-900/20"
-                                    },
-                                    {
-                                        icon: Mail,
-                                        title: "Feedback",
-                                        email: "contact@worldwideshortnews.com",
-                                        description: "We value your thoughts and suggestions",
-                                        gradient: "from-blue-500 to-cyan-500",
-                                        bgGradient: "from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20"
-                                    },
-                                    {
-                                        icon: Briefcase,
-                                        title: "Careers",
-                                        email: "careers@worldwideshortnews.com",
-                                        description: "Join our talented team",
-                                        gradient: "from-violet-500 to-purple-500",
-                                        bgGradient: "from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-violet-900/20"
-                                    },
-                                    {
-                                        icon: TrendingUp,
-                                        title: "Advertising",
-                                        email: "ads@worldwideshortnews.com",
-                                        description: "Explore partnership opportunities",
-                                        gradient: "from-amber-500 to-orange-500",
-                                        bgGradient: "from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20"
-                                    }
-                                ].map((item, index) => (
-                                    <div key={index} className="group">
-                                        <a
-                                            href={`mailto:${item.email}`}
-                                            className={`block bg-gradient-to-r ${item.bgGradient} rounded-2xl p-6 border border-white/30 dark:border-gray-700/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 backdrop-blur-sm`}
-                                        >
-                                            <div className="flex items-center">
-                                                <div className={`w-14 h-14 bg-gradient-to-r ${item.gradient} rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                                                    <item.icon className="w-7 h-7 text-white" />
-                                                </div>
-                                                <div className="ml-4 flex-1">
-                                                    <h5 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-1">
-                                                        {item.title}
-                                                    </h5>
-                                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                                                        {item.description}
-                                                    </p>
-                                                    <p className={`font-medium bg-gradient-to-r ${item.gradient} bg-clip-text text-transparent group-hover:scale-105 transition-transform duration-300 inline-block`}>
-                                                        {item.email}
-                                                    </p>
-                                                </div>
-                                                <div className="ml-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                                    <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                                                        <span className="text-2xl">→</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </a>
-                                    </div>
-                                ))}
+                            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/10">
+                                <h3 className="text-xl font-bold mb-4">Send us a Message</h3>
+                                <p className="text-sm text-gray-400 mb-6">
+                                    For quick inquiries, reach out directly. We aim to respond within 24 hours.
+                                </p>
+                                <button onClick={() => { router.push('/contact-us') }} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+                                    Contact Support
+                                </button>
                             </div>
                         </div>
                     </div>
-                </section> */}
+                </section>
+
             </main>
         </div>
     );
 }
-
 
 About.getLayout = function getLayout(page: React.ReactElement) {
     return <LandingLayout>{page}</LandingLayout>;
