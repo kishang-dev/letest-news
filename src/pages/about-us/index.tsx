@@ -158,8 +158,8 @@ const About = () => {
                                         <div>
                                             <h4 className="font-semibold text-white">Email Us</h4>
                                             <div className="grid sm:grid-cols-2 gap-4 mt-2">
-                                                <a href="mailto:contact@worldwideshortnews.com" className="text-gray-400 hover:text-white transition-colors">
-                                                    General: contact@worldwideshortnews.com
+                                                <a href="mailto:contactworldwideshortnews@gmail.com" className="text-gray-400 hover:text-white transition-colors">
+                                                    General: contactworldwideshortnews@gmail.com
                                                 </a>
                                                 {/* <a href="mailto:press@worldwideshortnews.com" className="text-gray-400 hover:text-white transition-colors">
                                                     Press: press@worldwideshortnews.com
