@@ -254,9 +254,9 @@ const DetailPage = () => {
             </div>
           </div>
 
-          <p className="text-sm text-gray-500 mt-8">
+          {/* <p className="text-sm text-gray-500 mt-8">
             Published on {publishDate}
-          </p>
+          </p> */}
         </article>
 
         <aside className="w-full lg:w-80 xl:w-96">

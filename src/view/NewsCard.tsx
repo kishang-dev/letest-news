@@ -96,9 +96,9 @@ export default function NewsCard({ news }: { news: News }) {
         >
           {news?.title}
         </h3>
-        <h6 className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+        {/* <h6 className="text-sm text-gray-500 dark:text-gray-400 font-medium">
           <TimeAgo date={news?.createdAt} />
-        </h6>
+        </h6> */}
       </div>
     </div>
   );
