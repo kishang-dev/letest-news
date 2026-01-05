@@ -12,6 +12,9 @@ import {
   Query,
   DocumentData,
   limit,
+  getCountFromServer,
+  getDocs,
+  startAfter,
 } from "firebase/firestore";
 import { app } from "@/lib/firebase";
 
@@ -35,11 +38,15 @@ export default function Home() {
 
   const currentPage = Math.max(1, parseInt(pageQuery as string) || 1);
 
+  const [totalItems, setTotalItems] = useState(0);
   const [featuredNews, setFeaturedNews] = useState<News[]>([]);
-  const [allNews, setAllNews] = useState<News[]>([]);           // Real-time full list
-  const [filteredNews, setFilteredNews] = useState<News[]>([]); // After category + search
+  const [rawNewsList, setRawNewsList] = useState<News[]>([]);
+  const [filteredNews, setFilteredNews] = useState<News[]>([]);
   const [displayedNews, setDisplayedNews] = useState<News[]>([]);
   const [loading, setLoading] = useState(true);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  const isSearchMode = !!searchQuery?.trim();
 
   const db = getFirestore(app);
   const unsubscribeRef = useRef<(() => void) | null>(null);
@@ -61,101 +68,162 @@ export default function Home() {
       });
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
-
     },
     [router]
   );
 
-  // 1. Real-time: Listen to ALL news (or filtered by category)
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim());
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Reset to page 1 when search query changes
+  useEffect(() => {
+    if (searchQuery.trim() && currentPage !== 1) {
+      goToPage(1);
+    }
+  }, [searchQuery]);
+
+  // 1. Fetch Total Count whenever category changes
+  useEffect(() => {
+    const fetchCount = async () => {
+      let q = query(collection(db, "news"));
+      if (category && category !== "Home") {
+        q = query(collection(db, "news"), where("categories", "array-contains", category as string));
+      }
+      const snapshot = await getCountFromServer(q);
+      setTotalItems(snapshot.data().count);
+    };
+    fetchCount();
+  }, [db, category]);
+
+  // 2. Fetch Featured News
+  useEffect(() => {
+    if (category && category !== "Home") {
+      setFeaturedNews([]);
+      return;
+    }
+    const q = query(collection(db, "news"), where("isFeatured", "==", true), orderBy("createdAt", "desc"), limit(5));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const news = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate().toISOString() || "",
+        updatedAt: doc.data().updatedAt?.toDate().toISOString() || "",
+      } as News));
+      setFeaturedNews(news);
+    });
+    return () => unsubscribe();
+  }, [db, category]);
+
+  // 3. Main Data Listener
   useEffect(() => {
     if (unsubscribeRef.current) unsubscribeRef.current();
 
+    // Clear list immediately if we're starting a search to avoid showing old data
+    if (debouncedSearch) {
+      setRawNewsList([]);
+    }
     setLoading(true);
 
-    let q: Query<DocumentData> = query(
-      collection(db, "news"),
-      orderBy("createdAt", "desc"),
-      limit(50)
-    );
-
-    // Apply category filter if not "Home"
-    if (category && category !== "Home") {
-      q = query(
-        collection(db, "news"),
-        where("categories", "array-contains", category as string),
-        orderBy("createdAt", "desc"),
-        limit(50)
-      );
-    }
-
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const newsList: News[] = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate().toISOString() || "",
-          updatedAt: doc.data().updatedAt?.toDate().toISOString() || "",
-        } as News));
-
-        // Separate featured
-        const featured = newsList.filter((n) => n.isFeatured);
-        const regular = newsList.filter((n) => !n.isFeatured);
-
-        setFeaturedNews(featured);
-        setAllNews(regular); // Only non-featured in main list
-
-        setLoading(false);
-      },
-      (error) => {
-        console.error("Realtime listener error:", error);
-        setLoading(false);
+    const fetchData = async () => {
+      let baseQuery = query(collection(db, "news"), orderBy("createdAt", "desc"));
+      if (category && category !== "Home") {
+        baseQuery = query(collection(db, "news"), where("categories", "array-contains", category as string), orderBy("createdAt", "desc"));
       }
-    );
 
-    unsubscribeRef.current = unsubscribe;
+      let q;
+      if (debouncedSearch) {
+        // Reduced to 100 for more "Direct" performance
+        q = query(baseQuery, limit(100));
+      } else if (currentPage > 1) {
+        const skipCount = (currentPage - 1) * PAGE_SIZE;
+        const skipQuery = query(baseQuery, limit(skipCount));
+        const skipSnapshot = await getDocs(skipQuery);
+        const lastVisible = skipSnapshot.docs[skipSnapshot.docs.length - 1];
+        q = lastVisible ? query(baseQuery, startAfter(lastVisible), limit(PAGE_SIZE)) : query(baseQuery, limit(PAGE_SIZE));
+      } else {
+        q = query(baseQuery, limit(PAGE_SIZE));
+      }
 
-    return () => {
-      unsubscribeRef.current?.();
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        let totalBytes = 0;
+        const list = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          totalBytes += doc.id.length + JSON.stringify(data).length;
+          return {
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt?.toDate().toISOString() || "",
+            updatedAt: data.updatedAt?.toDate().toISOString() || "",
+          } as News;
+        });
+
+
+        if (debouncedSearch) {
+          debugger
+          console.log(`[Search Time] Query: "${debouncedSearch}" | Fetched: ${list.length} | Size: ${(totalBytes / 1024).toFixed(2)} KB`);
+        } else {
+          debugger
+          console.log(`[Reload/Initial Load] Page: ${currentPage} | Fetched: ${list.length} | Size: ${(totalBytes / 1024).toFixed(2)} KB`);
+        }
+
+        setRawNewsList(list);
+        setLoading(false);
+      }, (error) => {
+        console.error("Data error:", error);
+        setLoading(false);
+      });
+      unsubscribeRef.current = unsubscribe;
     };
-  }, [db, category]);
 
-  // 2. Real-time Search + Category Filtering (client-side on live data)
+    fetchData();
+    return () => unsubscribeRef.current?.();
+  }, [db, category, currentPage, debouncedSearch]);
+
+  // 4. Transform Raw Data (Search Filter + Display Slicing)
   useEffect(() => {
-    if (!allNews.length) {
-      setFilteredNews([]);
-      return;
+    let result = rawNewsList;
+    if (debouncedSearch) {
+      const queryStr = debouncedSearch.toLowerCase();
+      const keywords = queryStr.split(/\s+/).filter(k => k.length > 0);
+
+      if (keywords.length > 0) {
+        result = rawNewsList.filter(item => {
+          const title = item.title.toLowerCase();
+          const content = (item.content || "").toLowerCase();
+          return keywords.every(kw => title.includes(kw) || content.includes(kw));
+        });
+
+        result.sort((a, b) => {
+          const titleA = a.title.toLowerCase();
+          const titleB = b.title.toLowerCase();
+          if (titleA === queryStr && titleB !== queryStr) return -1;
+          if (titleB === queryStr && titleA !== queryStr) return 1;
+          const aHasPhrase = titleA.includes(queryStr);
+          const bHasPhrase = titleB.includes(queryStr);
+          if (aHasPhrase && !bHasPhrase) return -1;
+          if (bHasPhrase && !aHasPhrase) return 1;
+          return 0;
+        });
+      }
     }
-
-    let result = allNews;
-
-    // Apply search
-    if (searchQuery?.trim()) {
-      const term = searchQuery.toLowerCase().trim();
-      result = allNews.filter(
-        (item) =>
-          item.title.toLowerCase().includes(term) ||
-          item.content?.toLowerCase().includes(term) ||
-          item.categories.some((c) => c.toLowerCase().includes(term))
-      );
-    }
-
     setFilteredNews(result);
-  }, [allNews, searchQuery]);
+    // If searching, we slice locally. If not, the rawNewsList IS the current page.
+    const itemsToShow = debouncedSearch
+      ? result.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+      : result;
 
-  // 3. Real-time Pagination (updates instantly when new article added)
-  useEffect(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    const end = start + PAGE_SIZE;
-    const pageItems = filteredNews.slice(start, end);
-    setDisplayedNews(pageItems);
-    setNewsList(pageItems);
-  }, [filteredNews, currentPage, setNewsList]);
+    setDisplayedNews(itemsToShow);
+    setNewsList(itemsToShow);
+  }, [rawNewsList, debouncedSearch, currentPage, setNewsList]);
 
   // Final calculations
-  const isSearchMode = !!searchQuery?.trim();
-  const totalItems = filteredNews.length;
-  const totalPages = Math.ceil(totalItems / PAGE_SIZE);
+  const totalItemsToDisplay = isSearchMode ? filteredNews.length : totalItems;
+  const totalPages = Math.ceil(totalItemsToDisplay / PAGE_SIZE);
 
   // Auto-reset to page 1 if current page becomes invalid
   useEffect(() => {
@@ -194,7 +262,7 @@ export default function Home() {
             <strong className="text-blue-600 dark:text-blue-400">"{searchQuery}"</strong>
           </p>
           <p className="text-sm text-gray-600 mt-1">
-            {totalItems} article{totalItems !== 1 ? "s" : ""} found
+            {totalItemsToDisplay} article{totalItemsToDisplay !== 1 ? "s" : ""} found
           </p>
         </div>
       )}
@@ -233,7 +301,7 @@ export default function Home() {
                   <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}
-                    totalItems={totalItems}
+                    totalItems={totalItemsToDisplay}
                     onPageChange={goToPage}
                   />
                 </div>
